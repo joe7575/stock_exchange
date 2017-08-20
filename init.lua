@@ -16,6 +16,8 @@
 
 ]]--
 
+stock_exchange = {}
+
 local storage = minetest.get_mod_storage()
 local Players = minetest.deserialize(storage:get_string("Players")) or {}
 local Stock = minetest.deserialize(storage:get_string("Stock")) or {}
@@ -59,7 +61,7 @@ end)
 minetest.register_on_joinplayer(function(ObjectRef)
 	local name = ObjectRef:get_player_name()
 	--ObjectRef:override_day_night_ratio(0.2)
-	if Players[name] == nil then
+	if Players[name] == nil or Players[name].balance == nil then
 		Players[name] = {balance=400}
 	end
 	local idx = ObjectRef:hud_add({
@@ -72,6 +74,56 @@ minetest.register_on_joinplayer(function(ObjectRef)
 	})		
 	Players[name].hud_idx = idx
 end)
+
+
+function stock_exchange.player_has_money(name, price)
+	local player = minetest.get_player_by_name(name)
+	if player ~= nil then
+		if Players[name].balance ~= nil then
+			return Players[name].balance >= price
+		end
+	end
+	return false
+end
+
+function stock_exchange.update_player_hud(name, amount)
+	local player = minetest.get_player_by_name(name)
+	if player ~= nil then
+		if Players[name].balance ~= nil then
+			Players[name].balance = Players[name].balance + amount
+		else
+			Players[name].balance = amount
+		end
+		local idx = Players[name].hud_idx
+		if idx ~= nil then
+			player:hud_change(idx, "text", Players[name].balance.." €")
+		end
+	end
+end	
+
+function stock_exchange.set_player_hud(name, amount)
+	local player = minetest.get_player_by_name(name)
+	if player ~= nil then
+		Players[name].balance = amount
+		local idx = Players[name].hud_idx
+		if idx ~= nil then
+			player:hud_change(idx, "text", Players[name].balance.." €")
+			return true
+		end
+	end
+	return false
+end	
+
+function stock_exchange.get_player_account(name)
+	local player = minetest.get_player_by_name(name)
+	if player ~= nil then
+		if Players[name].balance ~= nil then
+			return Players[name].balance
+		end
+	end
+	return nil
+end
+
 
 minetest.register_on_leaveplayer(function(ObjectRef, timed_out)
 	update_mod_storage()
@@ -129,24 +181,9 @@ local function chat(player_name, text)
 	end
 end
 
-local function update_player_hud(name, amount)
-	local player = minetest.get_player_by_name(name)
-	if player ~= nil then
-		if Players[name].balance ~= nil then
-			Players[name].balance = Players[name].balance + amount
-		else
-			Players[name].balance = amount
-		end
-		local idx = Players[name].hud_idx
-		if idx ~= nil then
-			player:hud_change(idx, "text", Players[name].balance.." €")
-		end
-	end
-end	
-
 local function daily_payment()
 	for name, item in pairs(Players) do
-		update_player_hud(name, PerDayValue)
+		stock_exchange.update_player_hud(name, PerDayValue)
 	end
 end	
 
@@ -161,13 +198,13 @@ local function process_orders()
 					local price = tonumber(order.price) * tonumber(order.amount)
 					--order.state = "expired"
 					order.state = "closed"
-					update_player_hud(name, price)
+					stock_exchange.update_player_hud(name, price)
 				elseif order.transfer == "Kaufen"
 				and tonumber(order.price) >= tonumber(Stock[order.item].price)
 				and order.state == "open" then
 					local price = tonumber(order.price) * tonumber(order.amount)
-					if Players[name].balance ~= nil and Players[name].balance > price then
-						update_player_hud(name, -price)
+					if stock_exchange.player_has_money(name, price) then
+						stock_exchange.update_player_hud(name, -price)
 						order.state = "closed"
 					end
 				end
@@ -182,7 +219,7 @@ local function good_morning()
 		minetest.chat_send_all("Guten Morgen!")
 		daily_payment()
 		new_day = false
-	elseif time ~= nil and time > 0.2 and time < 0.25 then
+	elseif time ~= nil and time > 0.75 and time < 0.85 then
 		new_day = true
 	end
 	if time ~= nil and time > 0.375 and time < 0.75 then
@@ -205,7 +242,6 @@ end
 
 -- helper function to interprete user input
 local function block_type_result(player, fields)
-	--print(dump(fields))
 	local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
 	local meta = minetest.get_meta(pos)
 	if fields.block_type then
@@ -230,7 +266,6 @@ local function select_formspec(key)
 	tRes[2] = "label[2.4,0.6;Artikel]label[3.9,0.6;Preis]label[5,0.6;Trend]"..
 			  "label[6.4,0.6;Kaufen]label[8,0.6;Verkaufen]"
 	for idx,item in ipairs(ItemGroups[key]) do
-		--print(item)
 		local value = Stock[item].price
 		local ypos = 0.4 + idx*1.1
 		local ypos2 = ypos + 0.2
@@ -304,9 +339,14 @@ local function formspec_cancel(fields)
 	return nil
 end
 
-local function add_to_players_inventory(player_name, item_name, amount)
+function stock_exchange.add_to_players_inventory(player_name, item_name, amount)
 	local inv = minetest.get_inventory({type="player", name=player_name})
-	local stack = ItemStack(item_name.." "..amount)
+	local stack
+	if amount < 2 then
+		stack = ItemStack(item_name)
+	else
+		stack = ItemStack(item_name.." "..amount)
+	end
 	if not inv:room_for_item("main", stack) then
 		chat(player_name, "Error: Dein Inventory ist voll!")
 		return false
@@ -367,9 +407,9 @@ local function on_player_receive_fields(player, formname, fields)
 			local item = player:get_attribute("stock_item")
 			local res = true
 			if order.transfer == "Kaufen" and order.state == "closed" then
-				res = add_to_players_inventory(player_name, Stock[item].name, order.amount)
+				res = stock_exchange.add_to_players_inventory(player_name, Stock[item].name, order.amount)
 			elseif order.transfer == "Verkaufen" and order.state == "open" then
-				res = add_to_players_inventory(player_name, Stock[item].name, order.amount)
+				res = stock_exchange.add_to_players_inventory(player_name, Stock[item].name, order.amount)
 			end
 			if res then
 				table.remove(Orders[player_name], idx)
@@ -445,7 +485,6 @@ local function orders_formspec(name)
 		tRes[2] = "label[0.1,0.6;Vorgang]label[1.6,0.6;Artikel]label[4.4,0.6;Stück]"..
 					"label[5.6,0.6;Preis]label[6.8,0.6;Status]label[8,0.6;Löschen]"
 		local idx = 0
-		--print(dump(Orders))
 		if Orders[name] ~= nil and #Orders[name] > 0 then
 			for _,order in ipairs(Orders[name]) do
 				idx = idx + 1
@@ -530,5 +569,8 @@ minetest.register_node("stock_exchange:mirror_glass", {
 good_morning()
 
 --dofile(minetest.get_modpath("stock_exchange") .. "/letters.lua")
+dofile(minetest.get_modpath("stock_exchange") .. "/homedecor.lua")
+dofile(minetest.get_modpath("stock_exchange") .. "/commands.lua")
 
 print ("[MOD] Stock Exchange loaded")
+
