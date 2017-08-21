@@ -4,7 +4,6 @@ local Items = {
 	{name="homedecor:bench_large_2", desc="Garden Bench (style 2)"},
 	{name="homedecor:shrubbery_large_yellow", desc="Shrubbery (yellow)"},
 	{name="homedecor:4_bottles_brown", desc="Four brown bottles"},
-	{name="homedecor:refrigerator_steel_locked", desc="Refrigerator (stainless steel) (Locked)"},
 	{name="homedecor:ground_lantern", desc="Ground Lantern"},
 	{name="homedecor:bathroom_set", desc="Bathroom sundries set"},
 	{name="homedecor:table_white", desc="White Table"},
@@ -29,7 +28,6 @@ local Items = {
 	{name="homedecor:painting_3", desc="Decorative painting #3"},
 	{name="homedecor:gate_picket_closed", desc="Unpainted Picket Fence Gate"},
 	{name="homedecor:shrubbery_large_green", desc="Shrubbery (green)"},
-	{name="homedecor:microwave_oven_active_locked", desc="Microwave Oven (active) (Locked)"},
 	{name="homedecor:painting_14", desc="Decorative painting #14"},
 	{name="homedecor:candlestick_brass", desc="Candlestick (brass)"},
 	{name="homedecor:speaker", desc="Large Stereo Speaker"},
@@ -47,16 +45,11 @@ local Items = {
 	{name="homedecor:bottle_brown", desc="Brown bottle"},
 	{name="homedecor:painting_7", desc="Decorative painting #7"},
 	{name="homedecor:kitchen_chair_padded", desc="Kitchen chair"},
-	{name="homedecor:banister_wood_diagonal_right", desc="Banister for Stairs (wood, diagonal)"},
 	{name="homedecor:nightstand_oak_one_drawer", desc="Nightstand with One Drawer (oak)"},
-	{name="homedecor:painting_20", desc="Decorative painting #20"},
 	{name="homedecor:rug_large", desc="Rug (large)"},
 	{name="homedecor:doghouse", desc="Doghouse"},
-	{name="homedecor:door_wrought_iron_right", desc="Wrought Iron Gate/Door (right opening)"},
-	{name="homedecor:door_closet_oak_right", desc="Oak Closet Door (right opening)"},
 	{name="homedecor:standing_lamp_hi", desc="Standing Lamp"},
 	{name="homedecor:plasma_ball", desc="Plasma Ball"},
-	{name="homedecor:painting_19", desc="Decorative painting #19"},
 	{name="homedecor:cobweb_plantlike", desc="Cobweb"},
 	{name="homedecor:fence_wrought_iron", desc="Fence/railing (wrought iron)"},
 	{name="homedecor:speaker_open", desc="Large Stereo Speaker, open front"},
@@ -68,22 +61,17 @@ local Items = {
 	{name="homedecor:bed_kingsize", desc="Bed (king sized)"},
 	{name="homedecor:banister_white_dark_diagonal_left", desc="Banister for Stairs (dark topped, diagonal)"},
 	{name="homedecor:speaker_small", desc="Small Surround Speaker"},
-	{name="homedecor:oven_active", desc="Oven (active)"},
 	{name="homedecor:fence_barbed_wire", desc="Barbed Wire Fence"},
 	{name="homedecor:banister_wrought_iron_diagonal_left", desc="Banister for Stairs (wrought iron, diagonal)"},
 	{name="homedecor:armchair", desc="Armchair"},
-	{name="homedecor:door_bedroom_right", desc="White Bedroom Door (right opening)"},
 	{name="homedecor:blinds_thin", desc="Window Blinds (thin)"},
 	{name="homedecor:window_quartered", desc="Window (quartered)"},
 	{name="homedecor:bathtub_clawfoot_brass_taps", desc="Bathtub, clawfoot, with brass taps"},
-	{name="homedecor:microwave_oven_active", desc="Microwave Oven (active)"},
 	{name="homedecor:painting_1", desc="Decorative painting #1"},
 	{name="homedecor:painting_8", desc="Decorative painting #8"},
 	{name="homedecor:door_closet_mahogany_left", desc="Mahogany Closet Door (left opening)"},
 	{name="homedecor:soda_machine", desc="Soda vending machine"},
-	{name="homedecor:door_closet_mahogany_right", desc="Mahogany Closet Door (right opening)"},
 	{name="homedecor:office_chair_upscale", desc="Upscale office chair"},
-	{name="homedecor:door_wood_glass_white_right", desc="Glass and Wood, White (right opening)"},
 	{name="homedecor:table", desc="Table"},
 	{name="homedecor:pole_brass", desc="Brass Pole"},
 	{name="homedecor:door_glass_left", desc="Glass Office Door (left opening)"},
@@ -92,16 +80,13 @@ local Items = {
 	{name="homedecor:shingles_asphalt", desc="Shingles (asphalt)"},
 	{name="homedecor:painting_10", desc="Decorative painting #10"},
 	{name="homedecor:potted_bonsai", desc="Potted flower (Bonsai)"},
-	{name="homedecor:kitchen_cabinet_granite_locked", desc="Kitchen Cabinet (granite top) (Locked)"},
 	{name="homedecor:nightstand_mahogany_two_drawers", desc="Nightstand with Two Drawers (mahogany)"},
 	{name="homedecor:curtainrod_brass", desc="Curtain Rod (brass)"},
 	{name="homedecor:ceiling_lamp_off", desc="Ceiling Lamp (off)"},
-	{name="homedecor:kitchen_cabinet_marble_locked", desc="Kitchen Cabinet (marble top) (Locked)"},
 	{name="homedecor:painting_18", desc="Decorative painting #18"},
 	{name="homedecor:dartboard", desc="Dartboard"},
 	{name="homedecor:candle", desc="Thick Candle"},
 	{name="homedecor:analog_clock_plastic", desc="Plastic analog clock"},
-	{name="homedecor:banister_white_dark_diagonal_right", desc="Banister for Stairs (dark topped, diagonal)"},
 	{name="homedecor:dvd_vcr", desc="DVD and VCR"},
 	{name="homedecor:dishwasher_marble", desc="Dishwasher (marble)"},
 	{name="homedecor:wood_table_large", desc="Large wooden table piece"},
@@ -109,7 +94,6 @@ local Items = {
 	{name="homedecor:welcome_mat_grey", desc="Grey welcome mat"},
 	{name="homedecor:refrigerator_white", desc="Refrigerator"},
 	{name="homedecor:dishwasher_wood", desc="Dishwasher (wood)"},
-	{name="homedecor:banister_wrought_iron_diagonal_right", desc="Banister for Stairs (wrought iron, diagonal)"},
 	{name="homedecor:swing", desc="Tree's swing"},
 	{name="homedecor:table_lamp_med", desc="Table Lamp"},
 	{name="homedecor:rug_persian", desc="Rug (persian)"},
@@ -117,7 +101,6 @@ local Items = {
 	{name="homedecor:well", desc="Water well"},
 	{name="homedecor:fence_picket_corner", desc="Unpainted Picket Fence Corner"},
 	{name="homedecor:wood_table_small_round", desc="Small round wooden table"},
-	{name="homedecor:oven_steel_active_locked", desc="Oven (stainless steel) (active) (Locked)"},
 	{name="homedecor:painting_5", desc="Decorative painting #5"},
 	{name="homedecor:painting_11", desc="Decorative painting #11"},
 	{name="homedecor:lattice_lantern_small", desc="Lattice lantern (small)"},
@@ -155,14 +138,10 @@ local Items = {
 	{name="homedecor:office_chair_basic", desc="Basic office chair"},
 	{name="homedecor:calendar", desc="Calendar"},
 	{name="homedecor:desk_globe", desc="Desk globe"},
-	{name="homedecor:desk_locked", desc="Desk (Locked)"},
 	{name="homedecor:filing_cabinet", desc="Filing cabinet"},
 	{name="homedecor:door_wood_glass_white_left", desc="Glass and Wood, White (left opening)"},
 	{name="homedecor:ironing_board", desc="Ironing board"},
 	{name="homedecor:dryer", desc="Tumble dryer"},
-	{name="homedecor:nightstand_oak_two_drawers_locked", desc="Nightstand with Two Drawers (oak) (Locked)"},
-	{name="homedecor:nightstand_mahogany_two_drawers_locked", desc="Nightstand with Two Drawers (mahogany) (Locked)"},
-	{name="homedecor:nightstand_mahogany_one_drawer_locked", desc="Nightstand with One Drawer (mahogany) (Locked)"},
 	{name="homedecor:shower_head", desc="Shower Head"},
 	{name="homedecor:shower_tray", desc="Shower Tray"},
 	{name="homedecor:taps_brass", desc="Bathroom taps/faucet (brass)"},
@@ -182,23 +161,15 @@ local Items = {
 	{name="homedecor:paper_towel", desc="Paper towels"},
 	{name="homedecor:kitchen_faucet", desc="Kitchen Faucet"},
 	{name="homedecor:kitchen_cabinet_with_sink", desc="Kitchen Cabinet with sink"},
-	{name="homedecor:kitchen_cabinet_with_sink_locked", desc="Kitchen Cabinet with sink (Locked)"},
-	{name="homedecor:kitchen_cabinet_half_locked", desc="Half-height Kitchen Cabinet (on ceiling) (Locked)"},
 	{name="homedecor:fence_brass", desc="Fence/railing (brass)"},
 	{name="homedecor:kitchen_cabinet_steel", desc="Kitchen Cabinet (steel top)"},
-	{name="homedecor:kitchen_cabinet_steel_locked", desc="Kitchen Cabinet (steel top) (Locked)"},
 	{name="homedecor:kitchen_cabinet_marble", desc="Kitchen Cabinet (marble top)"},
 	{name="homedecor:kitchen_cabinet_granite", desc="Kitchen Cabinet (granite top)"},
 	{name="homedecor:kitchen_cabinet", desc="Kitchen Cabinet"},
-	{name="homedecor:kitchen_cabinet_locked", desc="Kitchen Cabinet (Locked)"},
 	{name="homedecor:dishwasher_steel", desc="Dishwasher (steel)"},
 	{name="homedecor:dishwasher", desc="Dishwasher"},
 	{name="homedecor:coffee_maker", desc="Coffee Maker"},
 	{name="homedecor:microwave_oven", desc="Microwave Oven"},
-	{name="homedecor:microwave_oven_locked", desc="Microwave Oven (Locked)"},
-	{name="homedecor:oven_steel_locked", desc="Oven (stainless steel) (Locked)"},
-	{name="homedecor:oven_locked", desc="Oven (Locked)"},
-	{name="homedecor:refrigerator_white_locked", desc="Refrigerator (Locked)"},
 	{name="homedecor:refrigerator_steel", desc="Refrigerator (stainless steel)"},
 	{name="homedecor:standing_lamp_max", desc="Standing Lamp"},
 	{name="homedecor:table_lamp_max", desc="Table Lamp"},
@@ -230,12 +201,6 @@ local Items = {
 	{name="homedecor:japanese_wall_middle", desc="Japanese wall"},
 	{name="homedecor:gate_chainlink_open", desc="Chainlink Fence Gate"},
 	{name="homedecor:gate_picket_white_closed", desc="White Picket Fence Gate"},
-	{name="homedecor:door_woodglass2_right", desc="Wooden door with glass insert, type 2 (right opening)"},
-	{name="homedecor:door_woodglass_right", desc="Wooden door with glass insert (right opening)"},
-	{name="homedecor:door_wood_plain_right", desc="Plain Wooden Door (right opening)"},
-	{name="homedecor:door_wood_glass_mahogany_right", desc="Glass and Wood, Mahogany-colored (right opening)"},
-	{name="homedecor:door_wood_glass_oak_right", desc="Glass and Wood, Oak-colored (right opening)"},
-	{name="homedecor:door_glass_right", desc="Glass Office Door (right opening)"},
 	{name="homedecor:door_woodglass2_left", desc="Wooden door with glass insert, type 2 (left opening)"},
 	{name="homedecor:door_bedroom_left", desc="White Bedroom Door (left opening)"},
 	{name="homedecor:door_wood_plain_left", desc="Plain Wooden Door (left opening)"},
@@ -305,12 +270,9 @@ local Items = {
 	{name="homedecor:potted_cactus", desc="Potted flower (Cactus)"},
 	{name="homedecor:shingle_outer_corner_wood", desc="Wood Shingles (outer corner)"},
 	{name="homedecor:japanese_wall_top", desc="Japanese wall (top)"},
-	{name="homedecor:oven_steel_active", desc="Oven (stainless steel) (active)"},
-	{name="homedecor:banister_brass_diagonal_right", desc="Banister for Stairs (brass, diagonal)"},
 	{name="homedecor:barbecue", desc="Barbecue"},
 	{name="homedecor:bars", desc="Bars"},
 	{name="homedecor:sink", desc="Bathroom Sink"},
-	{name="homedecor:nightstand_oak_one_drawer_locked", desc="Nightstand with One Drawer (oak) (Locked)"},
 	{name="homedecor:toaster", desc="Toaster"},
 	{name="homedecor:kitchen_cabinet_half", desc="Half-height Kitchen Cabinet (on ceiling)"},
 	{name="homedecor:window_flowerbox", desc="Window flowerbox"},
@@ -326,15 +288,12 @@ local Items = {
 	{name="homedecor:television", desc="Small CRT Television"},
 	{name="homedecor:banister_wrought_iron_horizontal", desc="Banister for Stairs (wrought iron, horizontal)"},
 	{name="homedecor:rug_small", desc="Rug (small)"},
-	{name="homedecor:filing_cabinet_locked", desc="Filing cabinet (Locked)"},
 	{name="homedecor:standing_lamp_low", desc="Standing Lamp"},
 	{name="homedecor:wardrobe", desc="Wardrobe"},
-	{name="homedecor:door_exterior_fancy_right", desc="Fancy Wood/Glass Door (right opening)"},
 	{name="homedecor:dishwasher_granite", desc="Dishwasher (granite)"},
 	{name="homedecor:lattice_white_wood", desc="Garden Lattice (white wood)"},
 	{name="homedecor:oven_steel", desc="Oven (stainless steel)"},
 	{name="homedecor:door_closet_oak_left", desc="Oak Closet Door (left opening)"},
-	{name="homedecor:oven_active_locked", desc="Oven (active) (Locked)"},
 	{name="homedecor:simple_bench", desc="Simple Bench"},
 	{name="homedecor:candlestick_wrought_iron", desc="Candlestick (wrought iron)"},
 }
@@ -363,24 +322,24 @@ local function buy_formspec(name, desc)
 end	
 
 local function shop_formspec(tab)
-	local tRes = {"size[8,9]"..
+	local tRes = {"size[8,7.3]"..
 		default.gui_bg..
 		default.gui_bg_img..
 		default.gui_slots..
 		"label[2,0; Home Decor Shop, Seite "..tab.."]"}
-	tRes[2] = "tabheader[0,0;info; 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 ;"..tab..";;draw_border]"
+	tRes[2] = "tabheader[0,0;info;  ( 1 )  ,  ( 2 )  ,  ( 3 )  ,  ( 4 )  ,  ( 5 )  ,  ( 6 )  ;"..tab..";;draw_border]"
 	local start = tab*48
 	local stop = math.min(tab*48 + 47, #Items)
 	for idx = start,stop do
 		item = Items[idx]
 		local i = idx % 48
-		local ypos = math.floor(i / 8) + 1
+		local ypos = math.floor(i / 8) + 0.7
 		local xpos = (i % 8)
 		local gui_name = minetest.formspec_escape(item.name)
 		tRes[#tRes+1] = "item_image_button["..xpos..","..ypos..";1,1;"..item.name..";"..gui_name..";]"
 	end
-	tRes[#tRes+1] = "label[1,7.2;Alle Artikel kosten "..PRICE.." €]"
-	tRes[#tRes+1] = "button_exit[6,7;2,1;exit;Cancel]"
+	tRes[#tRes+1] = "label[1,6.9;Alle Artikel kosten "..PRICE.." €]"
+	tRes[#tRes+1] = "button_exit[6,6.7;2,1;exit;Cancel]"
 	return table.concat(tRes)
 end	
 

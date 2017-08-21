@@ -13,6 +13,7 @@
 	History:
 	2017-08-15  v0.01  First version
 	2017-08-17  v0.02  Stones added
+	2017-98-21  v0.03  Shop added
 
 ]]--
 
@@ -30,7 +31,7 @@ local function update_mod_storage()
 end
 
 local new_day = true
-local StartValue = 400
+local StartValue = 100
 local PerDayValue = 100
 
 local ItemGroups = {
@@ -215,8 +216,8 @@ end
 
 local function good_morning()
 	local time = minetest.get_timeofday()
-	if new_day and  time ~= nil and time > 0.25 then
-		minetest.chat_send_all("Guten Morgen!")
+	if new_day and  time ~= nil and time > 0.25 and time < 0.35 then
+		minetest.chat_send_all("[Server] Guten Morgen!")
 		daily_payment()
 		new_day = false
 	elseif time ~= nil and time > 0.75 and time < 0.85 then
