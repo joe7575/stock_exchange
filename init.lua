@@ -3,7 +3,7 @@
 	Stock Exchange
 	==============
 
-	v0.02 by JoSt
+	v0.05 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 
@@ -13,7 +13,9 @@
 	History:
 	2017-08-15  v0.01  First version
 	2017-08-17  v0.02  Stones added
-	2017-98-21  v0.03  Shop added
+	2017-08-21  v0.03  Shop added
+	2017-08-23  v0.04  Cactus added
+	2017-08-28  v0.05  Sell Cancel bugfix
 
 ]]--
 
@@ -35,21 +37,26 @@ local StartValue = 100
 local PerDayValue = 100
 
 local ItemGroups = {
-	ores = {"Coal", "Steel", "Copper", "Tin", "Gold", "Mese", "Diamond", "Flint"},
+	ores1 = {"Steel", "Copper", "Tin", "Gold", "Silver", "Mithril"},
+	ores2 = {"Coal", "Flint", "Mese", "Diamond"},
 	food = {"Apple", "Bread", "Mushroom", "Wheat", "Flour"},
 	dyes = {"White dye", "Blue dye", "Green dye", "Yellow dye",	"Red dye", "Black dye"},
 	stones = {"Sandstone", "Desert Sandstone", "Silver Sandstone", "Desert Cobblestone", 
-		      "Mossy Cobblestone", "Coral Skeleton", "Brown Coral", "Orange Coral"},
-	home_decor = {},
-	others = {"Wheat seed", "Cotton seed", "Paper", "Cotton", "White Wool", "Terracotta", "Plastic sheet"},
+		      "Mossy Cobblestone", "Terracotta", "Marble"},
+	corals = {"Coral Skeleton", "Brown Coral", "Orange Coral"},
+	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet"},
+	seed = {"Cotton seed", "Wheat seed"},
 }
 
 local tDescription = {
-	ores = "Erze und Mineralien",
+	ores1 = "Erze",
+	ores2 = "Mineralien",
 	food = "Lebensmittel und Zutaten",
 	dyes = "Farben",
-	stones = "Steine und Korallen",
+	stones = "Steine",
+	corals = "Korallen",
 	others = "Sonstiges",
+	seed = "Saatgut",
 }
 
 minetest.register_on_newplayer(function(ObjectRef)
@@ -135,16 +142,18 @@ minetest.register_on_shutdown(function()
 end)
 
 
-if next(Stock) == nil or Stock["Plastic sheet"] == nil then
+if next(Stock) == nil or Stock["Marble"] == nil then
 	Stock = {
 		Coal = {name="default:coal_lump", amount=1000, price=10, trend=""},
-		Steel = {name="default:steel_ingot", amount=1000, price=7, trend=""},
+		Steel = {name="default:steel_ingot", amount=1000, price=10, trend=""},
 		Flint = {name="default:flint", amount=1000, price=10, trend="+"},
 		Copper = {name="default:copper_ingot", amount=1000, price=32, trend=""},
 		Tin = {name="default:tin_ingot", amount=1000, price=40, trend=""},
-		Gold = {name="default:gold_ingot", amount=1000, price=50, trend=""},
-		Mese = {name="default:mese_crystal", amount=1000, price=60, trend=""},
-		Diamond = {name="default:diamond", amount=1000, price=80, trend=""},
+		Gold = {name="default:gold_ingot", amount=1000, price=60, trend=""},
+		Mese = {name="default:mese_crystal", amount=1000, price=80, trend=""},
+		Diamond = {name="default:diamond", amount=1000, price=100, trend=""},
+		Silver = {name="moreores:silver_ingot", amount=1000, price=60, trend=""},
+		Mithril = {name="moreores:mithril_ingot", amount=1000, price=120, trend=""},
 		Apple = {name="default:apple", amount=1000, price=10, trend=""},
 		Bread = {name="farming:bread", amount=1000, price=25, trend=""},
 		Mushroom = {name="flowers:mushroom_brown", amount=1000, price=5, trend=""},
@@ -172,6 +181,9 @@ if next(Stock) == nil or Stock["Plastic sheet"] == nil then
 		["Orange Coral"] = {name="default:coral_orange", amount=1000, price=15, trend=""},
 		["Coral Skeleton"] = {name="default:coral_skeleton", amount=1000, price=15, trend=""},
 		["Plastic sheet"] =  {name="homedecor:plastic_sheeting", amount=1000, price=10, trend=""},
+		Cactus = {name="default:cactus", amount=1000, price=20, trend=""},
+		Coins = {name="homedecor:coin", amount=1000, price=2, trend=""},
+		Marble = {name="building_blocks:Marble", amount=1000, price=15, trend=""},
 	}
 	update_mod_storage()
 end
@@ -237,7 +249,7 @@ local function block_type_formspec()
 		default.gui_slots..
 		"label[1,0; Minetest Börse]"..
 		"label[1,0.6;Type of Block:]"..
-		"textlist[1,1;2,1;block_type;Ores,Dyes,Food,Stones,Others]"..
+		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Stones,Corals,Seed,Others]"..
 		"button_exit[1.5,2.5;1,0.8;exit;OK]"
 end
 
@@ -246,7 +258,7 @@ local function block_type_result(player, fields)
 	local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
 	local meta = minetest.get_meta(pos)
 	if fields.block_type then
-		local tbl = {"ores","dyes","food","stones", "others"}
+		local tbl = {"ores1","ores2","dyes","food","stones", "corals", "seed", "others"}
 		local idx = tonumber(string.sub(fields.block_type, 5))
 		meta:set_string("selection", tbl[idx])
 	elseif fields.exit == "OK" then
@@ -259,7 +271,7 @@ end
 
 -- Output a list of items from the given category
 local function select_formspec(key)
-	local tRes = {"size[9,11]"..
+	local tRes = {"size[9,10]"..
 		default.gui_bg..
 		default.gui_bg_img..
 		default.gui_slots..
@@ -405,12 +417,11 @@ local function on_player_receive_fields(player, formname, fields)
 		local idx = formspec_cancel(fields)
 		if idx then
 			local order = Orders[player_name][idx]
-			local item = player:get_attribute("stock_item")
 			local res = true
 			if order.transfer == "Kaufen" and order.state == "closed" then
-				res = stock_exchange.add_to_players_inventory(player_name, Stock[item].name, order.amount)
+				res = stock_exchange.add_to_players_inventory(player_name, Stock[order.item].name, order.amount)
 			elseif order.transfer == "Verkaufen" and order.state == "open" then
-				res = stock_exchange.add_to_players_inventory(player_name, Stock[item].name, order.amount)
+				res = stock_exchange.add_to_players_inventory(player_name, Stock[order.item].name, order.amount)
 			end
 			if res then
 				table.remove(Orders[player_name], idx)
@@ -467,6 +478,7 @@ minetest.register_node("stock_exchange:stock", {
 	allow_metadata_inventory_put = allow_metadata_inventory,
 	allow_metadata_inventory_take = allow_metadata_inventory,
 	
+	paramtype = 'light',
 	light_source = 2,
 	paramtype2 = "facedir",
 	groups = {cracky=2},
@@ -531,6 +543,7 @@ minetest.register_node("stock_exchange:order", {
 					orders_formspec(clicker:get_player_name()))
 	end,
 	
+	paramtype = 'light',
 	light_source = 2,
 	paramtype2 = "facedir",
 	groups = {cracky=2},

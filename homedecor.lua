@@ -296,6 +296,18 @@ local Items = {
 	{name="homedecor:door_closet_oak_left", desc="Oak Closet Door (left opening)"},
 	{name="homedecor:simple_bench", desc="Simple Bench"},
 	{name="homedecor:candlestick_wrought_iron", desc="Candlestick (wrought iron)"},
+  {name="computer:monitor", desc="Monitor and keyboard"},
+  {name="computer:piepad", desc="Snapple Piepad"},
+  {name="computer:printer", desc="Printer-Scanner Combo"},
+  {name="computer:server", desc="Rack Server"},
+  {name="computer:shefriendSOO", desc="SheFriendSOO"},
+  {name="computer:tower", desc="Computer Tower"},
+  {name="computer:vanio", desc="Pony Vanio"},
+  {name="building_blocks:Fireplace", desc="Fireplace"},
+  {name="fake_fire:chimney_top_sandstone", desc="Sandstone chimney top"},
+  {name="fake_fire:chimney_top_stone", desc="Stone chimney top"},
+  {name="itemframes:pedestal", desc="Pedestal"},
+  {name="lavalamp:lavalamp", desc="Lava Lamp"},
 }
 
 -- provide data as key/value table in additon for faster lookup
@@ -331,7 +343,7 @@ local function shop_formspec(tab)
 	local start = tab*48
 	local stop = math.min(tab*48 + 47, #Items)
 	for idx = start,stop do
-		item = Items[idx]
+		local item = Items[idx]
 		local i = idx % 48
 		local ypos = math.floor(i / 8) + 0.7
 		local xpos = (i % 8)
@@ -348,13 +360,13 @@ local function on_player_receive_fields(player, formname, fields)
 	local player_name = player:get_player_name()
 	if formname == "stock_exchange:shop" then			-- select an item ?
 		if fields.info then
-			tab = tonumber(fields.info)
+			local tab = tonumber(fields.info)
 			minetest.show_formspec(player_name, 
 						"stock_exchange:shop", shop_formspec(tab))
 		elseif fields.quit ~= "true" then
-			name,val = next(fields)
+			local name,val = next(fields)
 			player:set_attribute("shop_item", name)
-			desc = ItemLookup[name]
+			local desc = ItemLookup[name]
 			minetest.show_formspec(player_name, "stock_exchange:shop_buy", buy_formspec(name, desc))
 		end
 	elseif formname == "stock_exchange:shop_buy" then
@@ -406,6 +418,7 @@ minetest.register_node("stock_exchange:shop", {
 	allow_metadata_inventory_put = allow_metadata_inventory,
 	allow_metadata_inventory_take = allow_metadata_inventory,
 	
+	paramtype = 'light',
 	light_source = 2,
 	paramtype2 = "facedir",
 	groups = {cracky=2},

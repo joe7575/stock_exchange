@@ -48,7 +48,7 @@ minetest.register_chatcommand("money_get", {
 			return false, "[Stock] Syntax: money_get <PlayerName>"
 		end
 		if minetest.check_player_privs(name, "creative") then
-			local value = stock_exchange.get_player_account(name)
+			local value = stock_exchange.get_player_account(player_name)
 			if value then
 				return true, "[Stock] Player "..player_name.." has "..value.." €"
 			end
