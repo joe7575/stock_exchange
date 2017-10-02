@@ -46,6 +46,7 @@ local ItemGroups = {
 	corals = {"Coral Skeleton", "Brown Coral", "Orange Coral"},
 	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet"},
 	seed = {"Cotton seed", "Wheat seed"},
+	fuel = {"Bio Gas", "Bio Fuel"},
 }
 
 local tDescription = {
@@ -57,6 +58,7 @@ local tDescription = {
 	corals = "Korallen",
 	others = "Sonstiges",
 	seed = "Saatgut",
+	fuel = "Kraftstoffe",
 }
 
 minetest.register_on_newplayer(function(ObjectRef)
@@ -105,8 +107,10 @@ function stock_exchange.update_player_hud(name, amount)
 		local idx = Players[name].hud_idx
 		if idx ~= nil then
 			player:hud_change(idx, "text", Players[name].balance.." €")
+      return true
 		end
 	end
+	return false
 end	
 
 function stock_exchange.set_player_hud(name, amount)
@@ -142,7 +146,7 @@ minetest.register_on_shutdown(function()
 end)
 
 
-if next(Stock) == nil or Stock["Marble"] == nil then
+if next(Stock) == nil or Stock["Bio Gas"] == nil then
 	Stock = {
 		Coal = {name="default:coal_lump", amount=1000, price=10, trend=""},
 		Steel = {name="default:steel_ingot", amount=1000, price=10, trend=""},
@@ -184,6 +188,8 @@ if next(Stock) == nil or Stock["Marble"] == nil then
 		Cactus = {name="default:cactus", amount=1000, price=20, trend=""},
 		Coins = {name="homedecor:coin", amount=1000, price=2, trend=""},
 		Marble = {name="building_blocks:Marble", amount=1000, price=15, trend=""},
+		["Bio Gas"] =  {name="tubelib_addons1:biogas", amount=1000, price=7, trend=""},
+		["Bio Fuel"] =  {name="tubelib_addons1:biofuel", amount=1000, price=15, trend=""},
 	}
 	update_mod_storage()
 end
@@ -249,7 +255,7 @@ local function block_type_formspec()
 		default.gui_slots..
 		"label[1,0; Minetest Börse]"..
 		"label[1,0.6;Type of Block:]"..
-		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Stones,Corals,Seed,Others]"..
+		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Stones,Corals,Seed,Fuel,Others]"..
 		"button_exit[1.5,2.5;1,0.8;exit;OK]"
 end
 
@@ -258,7 +264,7 @@ local function block_type_result(player, fields)
 	local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
 	local meta = minetest.get_meta(pos)
 	if fields.block_type then
-		local tbl = {"ores1","ores2","dyes","food","stones", "corals", "seed", "others"}
+		local tbl = {"ores1","ores2","dyes","food","stones", "corals", "seed", "fuel", "others"}
 		local idx = tonumber(string.sub(fields.block_type, 5))
 		meta:set_string("selection", tbl[idx])
 	elseif fields.exit == "OK" then
@@ -389,7 +395,7 @@ local function on_player_receive_fields(player, formname, fields)
 			if Orders[player_name] == nil then
 				Orders[player_name] = {}
 			end
-			local amount = tonumber(fields.number)
+			local amount = math.min(tonumber(fields.number), 99)
 			local price = tonumber(fields.price)
 			if amount ~= nil and amount > 0 and price ~= nil and price > 0 then
 				Orders[player_name][#Orders[player_name]+1] = {transfer=fields.buy, item=item, 
