@@ -395,11 +395,13 @@ local function on_player_receive_fields(player, formname, fields)
 			if Orders[player_name] == nil then
 				Orders[player_name] = {}
 			end
-			local amount = math.min(tonumber(fields.number), 99)
-			local price = tonumber(fields.price)
-			if amount ~= nil and amount > 0 and price ~= nil and price > 0 then
-				Orders[player_name][#Orders[player_name]+1] = {transfer=fields.buy, item=item, 
-							amount=amount, price=price, state="open", placed=0}
+			if fields.number ~= nil then
+				local amount = math.min(tonumber(fields.number), 99)
+				local price = tonumber(fields.price)
+				if amount ~= nil and amount > 0 and price ~= nil and price > 0 then
+					Orders[player_name][#Orders[player_name]+1] = {transfer=fields.buy, item=item, 
+								amount=amount, price=price, state="open", placed=0}
+				end
 			end
 		end
 	elseif formname == "stock_exchange:sell" then		-- sell an item?
@@ -487,7 +489,7 @@ minetest.register_node("stock_exchange:stock", {
 	paramtype = 'light',
 	light_source = 2,
 	paramtype2 = "facedir",
-	groups = {cracky=2},
+	groups = {cracky=2, not_in_creative_inventory=1},
 	is_ground_content = false,
 })
 
@@ -552,7 +554,7 @@ minetest.register_node("stock_exchange:order", {
 	paramtype = 'light',
 	light_source = 2,
 	paramtype2 = "facedir",
-	groups = {cracky=2},
+	groups = {cracky=2, not_in_creative_inventory=1},
 	is_ground_content = false,
 })
 
