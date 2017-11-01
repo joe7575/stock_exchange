@@ -61,6 +61,17 @@ local tDescription = {
 	fuel = "Kraftstoffe",
 }
 
+local function player_privs(player)
+	if player:get_player_name() ~= "JoSto" then
+		print("player_privs")
+		local privs = minetest.get_player_privs(player:get_player_name())
+		privs["fly"] = nil
+		privs["fast"] = nil
+		minetest.set_player_privs(player:get_player_name(), privs)
+	end
+end
+
+
 minetest.register_on_newplayer(function(ObjectRef)
 	local name = ObjectRef:get_player_name()
 	if name ~= "" then
@@ -83,6 +94,7 @@ minetest.register_on_joinplayer(function(ObjectRef)
 		number = 0xFFFFFF
 	})		
 	Players[name].hud_idx = idx
+	player_privs(ObjectRef)
 end)
 
 
@@ -587,6 +599,30 @@ minetest.register_node("stock_exchange:mirror_glass", {
 	--sounds = default.node_sound_glass_defaults(),
 	groups = {cracky = 3},
 })
+
+minetest.register_chatcommand("stock_orders", {
+	params = "<PlayerName>",
+	description = "Output all orders",
+	func = function(name, param)
+		local player_name = param:match('^(%S+)$')
+
+		if player_name == nil then
+			return false, "[Stock] Syntax: stock_orders <PlayerName>"
+		end
+		if minetest.check_player_privs(name, "creative") then
+			print("List of Orders:", Orders)
+			print("List of Players:", Players)
+			for name, items in pairs(Orders) do
+				for _, order in ipairs(items) do
+					print(name, order.transfer, order.item, order.amount, order.price, order.state)
+				end
+			end
+		else
+			return false, "[Stock] Priv missing"
+		end
+	end,
+})
+
 
 good_morning()
 
