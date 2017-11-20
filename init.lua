@@ -44,7 +44,7 @@ local ItemGroups = {
 	stones = {"Sandstone", "Desert Sandstone", "Silver Sandstone", "Desert Cobblestone", 
 		      "Mossy Cobblestone", "Terracotta", "Marble"},
 	corals = {"Coral Skeleton", "Brown Coral", "Orange Coral"},
-	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet"},
+	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet", "Straw"},
 	seed = {"Cotton seed", "Wheat seed"},
 	fuel = {"Bio Gas", "Bio Fuel"},
 }
@@ -63,7 +63,6 @@ local tDescription = {
 
 local function player_privs(player)
 	if player:get_player_name() ~= "JoSto" then
-		print("player_privs")
 		local privs = minetest.get_player_privs(player:get_player_name())
 		privs["fly"] = nil
 		privs["fast"] = nil
@@ -83,7 +82,7 @@ minetest.register_on_joinplayer(function(ObjectRef)
 	local name = ObjectRef:get_player_name()
 	--ObjectRef:override_day_night_ratio(0.2)
 	if Players[name] == nil or Players[name].balance == nil then
-		Players[name] = {balance=400}
+		Players[name] = {balance=StartValue}
 	end
 	local idx = ObjectRef:hud_add({
 		hud_elem_type = "text",
@@ -148,6 +147,18 @@ function stock_exchange.get_player_account(name)
 	return nil
 end
 
+local function balance_award_list()
+	local sortedList = {}
+	for key,val in pairs(Players) do
+		if key ~= "JoSto" then
+			sortedList[#sortedList+1] = {name=key, balance=val.balance}
+		end
+	end
+	table.sort(sortedList, function(x,y) 
+		return x.balance > y.balance
+	end)
+	return sortedList
+end
 
 minetest.register_on_leaveplayer(function(ObjectRef, timed_out)
 	update_mod_storage()
@@ -158,7 +169,7 @@ minetest.register_on_shutdown(function()
 end)
 
 
-if next(Stock) == nil or Stock["Bio Gas"] == nil then
+if next(Stock) == nil or Stock["Straw"] == nil then
 	Stock = {
 		Coal = {name="default:coal_lump", amount=1000, price=10, trend=""},
 		Steel = {name="default:steel_ingot", amount=1000, price=10, trend=""},
@@ -202,6 +213,7 @@ if next(Stock) == nil or Stock["Bio Gas"] == nil then
 		Marble = {name="building_blocks:Marble", amount=1000, price=15, trend=""},
 		["Bio Gas"] =  {name="tubelib_addons1:biogas", amount=1000, price=7, trend=""},
 		["Bio Fuel"] =  {name="tubelib_addons1:biofuel", amount=1000, price=15, trend=""},
+		["Straw"] =  {name="farming:straw", amount=1000, price=7, trend=""},
 	}
 	update_mod_storage()
 end
@@ -408,7 +420,10 @@ local function on_player_receive_fields(player, formname, fields)
 				Orders[player_name] = {}
 			end
 			if fields.number ~= nil then
-				local amount = math.min(tonumber(fields.number), 99)
+				local amount = tonumber(fields.number)
+				if amount then
+					amount = math.min(amount, 99)
+				end
 				local price = tonumber(fields.price)
 				if amount ~= nil and amount > 0 and price ~= nil and price > 0 then
 					Orders[player_name][#Orders[player_name]+1] = {transfer=fields.buy, item=item, 
@@ -570,6 +585,56 @@ minetest.register_node("stock_exchange:order", {
 	is_ground_content = false,
 })
 
+local function award_formspec(players)
+	local tRes = {"size[8,10]"..
+		default.gui_bg..
+		default.gui_bg_img..
+		default.gui_slots..
+		"label[1,0;Name]label[5,0;Vermögen]"}
+		for idx,player in ipairs(players) do
+			if idx >= 16 then
+				break
+			end
+			local ypos = idx*0.6
+			tRes[#tRes+1] = "label[1,"..ypos..";"..player.name.."]"
+			tRes[#tRes+1] = "label[5,"..ypos..";"..player.balance.." €]"
+		end
+		return table.concat(tRes)
+end	
+
+minetest.register_node("stock_exchange:award", {
+	description = "Stock Award",
+	tiles = {
+		-- up, down, right, left, back, front
+		"stock_exchange_award.png",
+	},
+
+	drawtype = "nodebox",
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{ -8/16, -8/16, 7/16,  8/16,  8/16, 8/16},
+		},
+	},
+	
+	after_place_node = function(pos, placer)
+		local meta = minetest.get_meta(pos)
+		meta:set_string("infotext", "Bestenliste")
+	end,
+	
+	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+		local list = balance_award_list()
+		minetest.show_formspec(clicker:get_player_name(), "stock_exchange:award", 
+					award_formspec(list))
+	end,
+	
+	paramtype = 'light',
+	light_source = 2,
+	paramtype2 = "facedir",
+	groups = {cracky=2, not_in_creative_inventory=1},
+	is_ground_content = false,
+})
+
 minetest.register_node("stock_exchange:mirror_glass", {
 	description = "Stock Exchange Mirror Glass",
 	drawtype = "nodebox",
@@ -629,6 +694,46 @@ good_morning()
 --dofile(minetest.get_modpath("stock_exchange") .. "/letters.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/homedecor.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/commands.lua")
+
+
+-------------------------------------------------------------------------------
+-- Data Maintenance
+-------------------------------------------------------------------------------
+--local function data_maintenance()
+--	-- Add time for aging of player accounts
+--	local day_cnt = minetest.get_day_count()
+--	local Tbl = table.copy(Players)
+--	for name,item in pairs(Tbl) do
+--		if Players[name].time == nil then
+--			Players[name].time = minetest.get_gametime()
+--		elseif (Players[name].time + ) < minetest.get_gametime() then
+--		end
+--	end
+--	else
+--		-- Remove old unused positions
+--		local Tbl = table.copy(Number2Pos)
+--		Number2Pos = {}
+--		local day_cnt = minetest.get_day_count()
+--		for num,item in pairs(Tbl) do
+--			if item.name then
+--				Number2Pos[num] = item
+--			-- data not older than 5 real days
+--			elseif item.time and (item.time + 360) > day_cnt then
+--				Number2Pos[num] = item
+--			else
+--				print("Position deleted", num)
+--			end
+--		end
+--	end
+--	print("[Tubelib] Data maintenance finished")
+--end	
+	
+--generate_Key2Number()
+
+---- maintain data after one minute
+---- (minetest.get_day_count() will not be valid at start time)
+--minetest.after(60, data_maintenance)
+
 
 print ("[MOD] Stock Exchange loaded")
 
