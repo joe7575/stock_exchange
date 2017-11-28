@@ -67,6 +67,7 @@ local function player_privs(player)
 		privs["fly"] = nil
 		privs["fast"] = nil
 		minetest.set_player_privs(player:get_player_name(), privs)
+    player:set_physics_override({gravity=1, speed=1})	
 	end
 end
 
@@ -694,6 +695,7 @@ good_morning()
 --dofile(minetest.get_modpath("stock_exchange") .. "/letters.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/homedecor.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/commands.lua")
+dofile(minetest.get_modpath("stock_exchange") .. "/skins.lua")
 
 
 -------------------------------------------------------------------------------
