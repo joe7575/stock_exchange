@@ -172,9 +172,6 @@ for idx,item in ipairs(tSkins) do
 		wield_image = item[2].."_preview.png",
 		groups = {cracky=0},
 		
-		on_use = skin_on_use,
-		on_place = skin_on_use,
-		
 		on_use = function (itemstack, user)
 			update_player_skin(user, idx)
 			local old_idx = user:get_attribute("stock_exchange:skin_idx") or 1
