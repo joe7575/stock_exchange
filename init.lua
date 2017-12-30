@@ -23,42 +23,109 @@ stock_exchange = {}
 
 local storage = minetest.get_mod_storage()
 local Players = minetest.deserialize(storage:get_string("Players")) or {}
-local Stock = minetest.deserialize(storage:get_string("Stock")) or {}
-local Orders = minetest.deserialize(storage:get_string("Orders")) or {}
+--local Orders = minetest.deserialize(storage:get_string("Orders")) or {}
 
 local function update_mod_storage()
 	storage:set_string("Players", minetest.serialize(Players))
-	storage:set_string("Stock", minetest.serialize(Stock))
-	storage:set_string("Orders", minetest.serialize(Orders))
+	storage:set_string("Stock", nil)
+	storage:set_string("Orders", nil)
 end
 
 local new_day = true
 local StartValue = 100
 local PerDayValue = 100
 
+local Orders = {}
+
 local ItemGroups = {
 	ores1 = {"Steel", "Copper", "Tin", "Gold", "Silver", "Mithril"},
 	ores2 = {"Coal", "Flint", "Mese", "Diamond"},
-	food = {"Apple", "Bread", "Mushroom", "Wheat", "Flour"},
+	food = {"Apple", "Melon Slice", "Raspberries", "Blueberries", "Grapes", "Bread", "Wheat"},
+	food2 = {"Carrot", "Potato", "Tomato", "Cucumber", "Pumpkin Slice", "Rhubarb", "Green Beans", "Chili Pepper"},
 	dyes = {"White dye", "Blue dye", "Green dye", "Yellow dye",	"Red dye", "Black dye"},
 	stones = {"Sandstone", "Desert Sandstone", "Silver Sandstone", "Desert Cobblestone", 
 		      "Mossy Cobblestone", "Terracotta", "Marble"},
 	corals = {"Coral Skeleton", "Brown Coral", "Orange Coral"},
 	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet", "Straw"},
-	seed = {"Cotton seed", "Wheat seed"},
+	seed = {"Cotton Seed", "Wheat Seed", "Corn", "Coffee Beans", "Hemp Seed", "Barley Seed", "Cocoa Beans"},
 	fuel = {"Bio Gas", "Bio Fuel"},
 }
 
 local tDescription = {
 	ores1 = "Erze",
 	ores2 = "Mineralien",
-	food = "Lebensmittel und Zutaten",
+	food = "Obst und Lebensmittel",
+	food2 = "Gemüse",
 	dyes = "Farben",
 	stones = "Steine",
 	corals = "Korallen",
 	others = "Sonstiges",
-	seed = "Saatgut",
+	seed = "Saatgut und Korn",
 	fuel = "Kraftstoffe",
+}
+
+local Stock = {
+	Coal = {name="default:coal_lump", amount=1000, price=10, trend=""},
+	Steel = {name="default:steel_ingot", amount=1000, price=10, trend=""},
+	Flint = {name="default:flint", amount=1000, price=10, trend="+"},
+	Copper = {name="default:copper_ingot", amount=1000, price=32, trend=""},
+	Tin = {name="default:tin_ingot", amount=1000, price=40, trend=""},
+	Gold = {name="default:gold_ingot", amount=1000, price=60, trend=""},
+	Mese = {name="default:mese_crystal", amount=1000, price=80, trend=""},
+	Diamond = {name="default:diamond", amount=1000, price=100, trend=""},
+	Silver = {name="moreores:silver_ingot", amount=1000, price=60, trend=""},
+	Mithril = {name="moreores:mithril_ingot", amount=1000, price=120, trend=""},
+	Apple = {name="default:apple", amount=1000, price=10, trend=""},
+	Bread = {name="farming:bread", amount=1000, price=25, trend=""},
+	Mushroom = {name="flowers:mushroom_brown", amount=1000, price=5, trend=""},
+	["Wheat Seed"] = {name="farming:seed_wheat", amount=1000, price=10, trend=""},
+	["Cotton Seed"] = {name="farming:seed_cotton", amount=1000, price=10, trend=""},
+	["White dye"] = {name="dye:white", amount=1000, price=5, trend="+"},
+	["Blue dye"] = {name="dye:blue", amount=1000, price=5, trend="+"},
+	["Green dye"] = {name="dye:green", amount=1000, price=5, trend="+"},
+	["Yellow dye"] = {name="dye:yellow", amount=1000, price=5, trend="+"},
+	["Red dye"] = {name="dye:red", amount=1000, price=5, trend="+"},
+	["Black dye"] = {name="dye:black", amount=1000, price=5, trend="+"},
+	Paper = {name="default:paper", amount=1000, price=10, trend=""},
+	Wheat = {name="farming:wheat", amount=1000, price=10, trend=""},
+	Cotton = {name="farming:cotton", amount=1000, price=4, trend=""},
+	Flour = {name="farming:flour", amount=1000, price=20, trend=""},
+	Terracotta = {name="homedecor:terracotta_base", amount=1000, price=10, trend=""},
+	Strow = {name="farming:straw ", amount=1000, price=7, trend=""},
+	["White Wool"] = {name="wool:white", amount=1000, price=15, trend=""},
+	["Desert Sandstone"] = {name="default:desert_sandstone", amount=1000, price=7, trend=""},
+	["Sandstone"] = {name="default:sandstone", amount=10000, price=5, trend=""},
+	["Silver Sandstone"] = {name="default:silver_sandstone", amount=10000, price=7, trend=""},
+	["Desert Cobblestone"] = {name="default:desert_cobble", amount=10000, price=7, trend=""},
+	["Mossy Cobblestone"] = {name="default:mossycobble", amount=10000, price=10, trend=""},
+	["Brown Coral"] = {name="default:coral_brown", amount=1000, price=15, trend=""},
+	["Orange Coral"] = {name="default:coral_orange", amount=1000, price=15, trend=""},
+	["Coral Skeleton"] = {name="default:coral_skeleton", amount=1000, price=15, trend=""},
+	["Plastic sheet"] =  {name="homedecor:plastic_sheeting", amount=1000, price=10, trend=""},
+	Cactus = {name="default:cactus", amount=1000, price=20, trend=""},
+	Coins = {name="homedecor:coin", amount=1000, price=2, trend=""},
+	Marble = {name="building_blocks:Marble", amount=1000, price=15, trend=""},
+	["Bio Gas"] =  {name="tubelib_addons1:biogas", amount=1000, price=7, trend=""},
+	["Bio Fuel"] =  {name="tubelib_addons1:biofuel", amount=1000, price=15, trend=""},
+	["Straw"] =  {name="farming:straw", amount=1000, price=7, trend=""},
+	
+	["Carrot"] =  {name="farming:carrot", amount=1000, price=7, trend=""},
+	["Potato"] =  {name="farming:potato", amount=1000, price=7, trend=""},
+	["Tomato"] =  {name="farming:tomato", amount=1000, price=7, trend=""},
+	["Cucumber"] =  {name="farming:cucumber", amount=1000, price=7, trend=""},
+	["Pumpkin Slice"] =  {name="farming:pumpkin_slice", amount=1000, price=7, trend=""},
+	["Rhubarb"] =  {name="farming:rhubarb", amount=1000, price=7, trend=""},
+	["Green Beans"] =  {name="farming:beans", amount=1000, price=7, trend=""},
+	["Chili Pepper"] =  {name="farming:chili_pepper", amount=1000, price=7, trend=""},
+	["Melon Slice"] =  {name="farming:melon_slice", amount=1000, price=7, trend=""},
+	["Raspberries"] =  {name="farming:raspberries", amount=1000, price=7, trend=""},
+	["Hemp Seed"] =  {name="farming:carrot", amount=1000, price=7, trend=""},
+	["Blueberries"] =  {name="farming:blueberries", amount=1000, price=7, trend=""},
+	["Grapes"] =  {name="farming:grapes", amount=1000, price=7, trend=""},
+	["Corn"] =  {name="farming:corn", amount=1000, price=7, trend=""},
+	["Coffee Beans"] =  {name="farming:coffee_beans", amount=1000, price=7, trend=""},
+	["Barley Seed"] =  {name="farming:barley", amount=1000, price=7, trend=""},
+	["Cocoa Beans"] =  {name="farming:cocoa_beans", amount=1000, price=7, trend=""},
 }
 
 local function player_privs(player)
@@ -170,55 +237,6 @@ minetest.register_on_shutdown(function()
 end)
 
 
-if next(Stock) == nil or Stock["Straw"] == nil then
-	Stock = {
-		Coal = {name="default:coal_lump", amount=1000, price=10, trend=""},
-		Steel = {name="default:steel_ingot", amount=1000, price=10, trend=""},
-		Flint = {name="default:flint", amount=1000, price=10, trend="+"},
-		Copper = {name="default:copper_ingot", amount=1000, price=32, trend=""},
-		Tin = {name="default:tin_ingot", amount=1000, price=40, trend=""},
-		Gold = {name="default:gold_ingot", amount=1000, price=60, trend=""},
-		Mese = {name="default:mese_crystal", amount=1000, price=80, trend=""},
-		Diamond = {name="default:diamond", amount=1000, price=100, trend=""},
-		Silver = {name="moreores:silver_ingot", amount=1000, price=60, trend=""},
-		Mithril = {name="moreores:mithril_ingot", amount=1000, price=120, trend=""},
-		Apple = {name="default:apple", amount=1000, price=10, trend=""},
-		Bread = {name="farming:bread", amount=1000, price=25, trend=""},
-		Mushroom = {name="flowers:mushroom_brown", amount=1000, price=5, trend=""},
-		["Wheat seed"] = {name="farming:seed_wheat", amount=1000, price=10, trend=""},
-		["Cotton seed"] = {name="farming:seed_cotton", amount=1000, price=10, trend=""},
-		["White dye"] = {name="dye:white", amount=1000, price=5, trend="+"},
-		["Blue dye"] = {name="dye:blue", amount=1000, price=5, trend="+"},
-		["Green dye"] = {name="dye:green", amount=1000, price=5, trend="+"},
-		["Yellow dye"] = {name="dye:yellow", amount=1000, price=5, trend="+"},
-		["Red dye"] = {name="dye:red", amount=1000, price=5, trend="+"},
-		["Black dye"] = {name="dye:black", amount=1000, price=5, trend="+"},
-		Paper = {name="default:paper", amount=1000, price=10, trend=""},
-		Wheat = {name="farming:wheat", amount=1000, price=10, trend=""},
-		Cotton = {name="farming:cotton", amount=1000, price=4, trend=""},
-		Flour = {name="farming:flour", amount=1000, price=20, trend=""},
-		Terracotta = {name="homedecor:terracotta_base", amount=1000, price=10, trend=""},
-		Strow = {name="farming:straw ", amount=1000, price=7, trend=""},
-		["White Wool"] = {name="wool:white", amount=1000, price=15, trend=""},
-		["Desert Sandstone"] = {name="default:desert_sandstone", amount=1000, price=7, trend=""},
-		["Sandstone"] = {name="default:sandstone", amount=10000, price=5, trend=""},
-		["Silver Sandstone"] = {name="default:silver_sandstone", amount=10000, price=7, trend=""},
-		["Desert Cobblestone"] = {name="default:desert_cobble", amount=10000, price=7, trend=""},
-		["Mossy Cobblestone"] = {name="default:mossycobble", amount=10000, price=10, trend=""},
-		["Brown Coral"] = {name="default:coral_brown", amount=1000, price=15, trend=""},
-		["Orange Coral"] = {name="default:coral_orange", amount=1000, price=15, trend=""},
-		["Coral Skeleton"] = {name="default:coral_skeleton", amount=1000, price=15, trend=""},
-		["Plastic sheet"] =  {name="homedecor:plastic_sheeting", amount=1000, price=10, trend=""},
-		Cactus = {name="default:cactus", amount=1000, price=20, trend=""},
-		Coins = {name="homedecor:coin", amount=1000, price=2, trend=""},
-		Marble = {name="building_blocks:Marble", amount=1000, price=15, trend=""},
-		["Bio Gas"] =  {name="tubelib_addons1:biogas", amount=1000, price=7, trend=""},
-		["Bio Fuel"] =  {name="tubelib_addons1:biofuel", amount=1000, price=15, trend=""},
-		["Straw"] =  {name="farming:straw", amount=1000, price=7, trend=""},
-	}
-	update_mod_storage()
-end
-
 local function chat(player_name, text)
 	if player_name ~= nil then
 		minetest.chat_send_player(player_name, "[Börse] "..text)
@@ -280,7 +298,7 @@ local function block_type_formspec()
 		default.gui_slots..
 		"label[1,0; Minetest Börse]"..
 		"label[1,0.6;Type of Block:]"..
-		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Stones,Corals,Seed,Fuel,Others]"..
+		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Food2,Stones,Corals,Seed,Fuel,Others]"..
 		"button_exit[1.5,2.5;1,0.8;exit;OK]"
 end
 
@@ -289,7 +307,7 @@ local function block_type_result(player, fields)
 	local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
 	local meta = minetest.get_meta(pos)
 	if fields.block_type then
-		local tbl = {"ores1","ores2","dyes","food","stones", "corals", "seed", "fuel", "others"}
+		local tbl = {"ores1","ores2","dyes","food", "food2", "stones", "corals", "seed", "fuel", "others"}
 		local idx = tonumber(string.sub(fields.block_type, 5))
 		meta:set_string("selection", tbl[idx])
 	elseif fields.exit == "OK" then
@@ -310,17 +328,19 @@ local function select_formspec(key)
 	tRes[2] = "label[2.4,0.6;Artikel]label[3.9,0.6;Preis]label[5,0.6;Trend]"..
 			  "label[6.4,0.6;Kaufen]label[8,0.6;Verkaufen]"
 	for idx,item in ipairs(ItemGroups[key]) do
-		local value = Stock[item].price
-		local ypos = 0.4 + idx*1.1
-		local ypos2 = ypos + 0.2
-		local ypos3 = ypos - 0.1
-		tRes[#tRes+1] = "label[0.2,"..ypos2..";"..item.."]"
-		tRes[#tRes+1] = "box[2.3,"..ypos3..";1,0.9;#555555]"
-		tRes[#tRes+1] = "item_image[2.4,"..ypos3..";1,1;"..Stock[item].name.."]"
-		tRes[#tRes+1] = "label[3.9,"..ypos2..";"..Stock[item].price.." €]"
-		tRes[#tRes+1] = "image[5,"..ypos2..";stock_exchange_arrow.png]"
-		tRes[#tRes+1] = "button_exit[6.3,"..ypos..";1,1;"..item..";buy]"
-		tRes[#tRes+1] = "button_exit[8,"..ypos..";1,1;"..item..";sell]"
+		if Stock[item] then
+			local value = Stock[item].price
+			local ypos = 0.4 + idx*1.1
+			local ypos2 = ypos + 0.2
+			local ypos3 = ypos - 0.1
+			tRes[#tRes+1] = "label[0.2,"..ypos2..";"..item.."]"
+			tRes[#tRes+1] = "box[2.3,"..ypos3..";1,0.9;#555555]"
+			tRes[#tRes+1] = "item_image[2.4,"..ypos3..";1,1;"..Stock[item].name.."]"
+			tRes[#tRes+1] = "label[3.9,"..ypos2..";"..Stock[item].price.." €]"
+			tRes[#tRes+1] = "image[5,"..ypos2..";stock_exchange_arrow.png]"
+			tRes[#tRes+1] = "button_exit[6.3,"..ypos..";1,1;"..item..";buy]"
+			tRes[#tRes+1] = "button_exit[8,"..ypos..";1,1;"..item..";sell]"
+		end
 	end
 	return table.concat(tRes)
 end	

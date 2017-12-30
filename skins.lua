@@ -72,6 +72,7 @@ tSkins = {
 	{"Julia", 'Julia_by_nelly'},
 	{"Iris", 'Iris_by_loupicate'},
 	{"Halloween Girl", 'Halloween_Girl_by_ElMehdiBen'},
+	{"Santa Claus", 'santa_by_jordan4ibanez'},
 }
 
 MAX_SKIN 	 = #tSkins
