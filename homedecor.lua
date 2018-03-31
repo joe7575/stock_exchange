@@ -286,6 +286,7 @@ local Items = {
 	{name="crafting:table_guide", desc="Crafting Table Guide"},
 	{name="crafting:table", desc="Crafting Table"},
 	{name="access_protection:info", desc="Info Block"},
+	{name="access_protection:picture", desc="Bild des Tages"},
 }
 
 -- provide data as key/value table in additon for faster lookup

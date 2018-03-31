@@ -16,55 +16,11 @@
 	2017-08-21  v0.03  Shop added
 	2017-08-23  v0.04  Cactus added
 	2017-08-28  v0.05  Sell Cancel bugfix
+	2018-03-31  v0.06  price fluctuation added
 
 ]]--
 
-stock_exchange = {}
-
-local storage = minetest.get_mod_storage()
-local Players = minetest.deserialize(storage:get_string("Players")) or {}
---local Orders = minetest.deserialize(storage:get_string("Orders")) or {}
-
-local function update_mod_storage()
-	storage:set_string("Players", minetest.serialize(Players))
-	storage:set_string("Stock", nil)
-	storage:set_string("Orders", nil)
-end
-
-local new_day = true
-local StartValue = 100
-local PerDayValue = 100
-
-local Orders = {}
-
-local ItemGroups = {
-	ores1 = {"Steel", "Copper", "Tin", "Gold", "Silver", "Mithril"},
-	ores2 = {"Coal", "Flint", "Mese", "Diamond"},
-	food = {"Apple", "Melon Slice", "Raspberries", "Blueberries", "Grapes", "Bread", "Wheat"},
-	food2 = {"Carrot", "Potato", "Tomato", "Cucumber", "Pumpkin Slice", "Rhubarb", "Green Beans", "Chili Pepper"},
-	dyes = {"White dye", "Blue dye", "Green dye", "Yellow dye",	"Red dye", "Black dye"},
-	stones = {"Sandstone", "Desert Sandstone", "Silver Sandstone", "Desert Cobblestone", 
-		      "Mossy Cobblestone", "Terracotta", "Marble"},
-	corals = {"Coral Skeleton", "Brown Coral", "Orange Coral"},
-	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet", "Straw"},
-	seed = {"Cotton Seed", "Wheat Seed", "Corn", "Coffee Beans", "Hemp Seed", "Barley Seed", "Cocoa Beans"},
-	fuel = {"Bio Gas", "Bio Fuel"},
-}
-
-local tDescription = {
-	ores1 = "Erze",
-	ores2 = "Mineralien",
-	food = "Obst und Lebensmittel",
-	food2 = "Gemüse",
-	dyes = "Farben",
-	stones = "Steine",
-	corals = "Korallen",
-	others = "Sonstiges",
-	seed = "Saatgut und Korn",
-	fuel = "Kraftstoffe",
-}
-
-local Stock = {
+local DefaultStock = {
 	Coal = {name="default:coal_lump", amount=1000, price=10, trend=""},
 	Steel = {name="default:steel_ingot", amount=1000, price=10, trend=""},
 	Flint = {name="default:flint", amount=1000, price=10, trend="+"},
@@ -87,11 +43,11 @@ local Stock = {
 	["Red dye"] = {name="dye:red", amount=1000, price=5, trend="+"},
 	["Black dye"] = {name="dye:black", amount=1000, price=5, trend="+"},
 	Paper = {name="default:paper", amount=1000, price=10, trend=""},
-	Wheat = {name="farming:wheat", amount=1000, price=10, trend=""},
+	Wheat = {name="farming:wheat", amount=1000, price=7, trend=""},
 	Cotton = {name="farming:cotton", amount=1000, price=4, trend=""},
 	Flour = {name="farming:flour", amount=1000, price=20, trend=""},
 	Terracotta = {name="homedecor:terracotta_base", amount=1000, price=10, trend=""},
-	Strow = {name="farming:straw ", amount=1000, price=7, trend=""},
+	Strow = {name="farming:straw ", amount=1000, price=21, trend=""},
 	["White Wool"] = {name="wool:white", amount=1000, price=15, trend=""},
 	["Desert Sandstone"] = {name="default:desert_sandstone", amount=1000, price=7, trend=""},
 	["Sandstone"] = {name="default:sandstone", amount=10000, price=5, trend=""},
@@ -107,7 +63,7 @@ local Stock = {
 	Marble = {name="building_blocks:Marble", amount=1000, price=15, trend=""},
 	["Bio Gas"] =  {name="tubelib_addons1:biogas", amount=1000, price=7, trend=""},
 	["Bio Fuel"] =  {name="tubelib_addons1:biofuel", amount=1000, price=15, trend=""},
-	["Straw"] =  {name="farming:straw", amount=1000, price=7, trend=""},
+	["Straw"] =  {name="farming:straw", amount=1000, price=21, trend=""},
 	
 	["Carrot"] =  {name="farming:carrot", amount=1000, price=7, trend=""},
 	["Potato"] =  {name="farming:potato", amount=1000, price=7, trend=""},
@@ -119,14 +75,92 @@ local Stock = {
 	["Chili Pepper"] =  {name="farming:chili_pepper", amount=1000, price=7, trend=""},
 	["Melon Slice"] =  {name="farming:melon_slice", amount=1000, price=7, trend=""},
 	["Raspberries"] =  {name="farming:raspberries", amount=1000, price=7, trend=""},
-	["Hemp Seed"] =  {name="farming:carrot", amount=1000, price=7, trend=""},
+	["Hemp Seed"] =  {name="farming:seed_hemp", amount=1000, price=7, trend=""},
 	["Blueberries"] =  {name="farming:blueberries", amount=1000, price=7, trend=""},
 	["Grapes"] =  {name="farming:grapes", amount=1000, price=7, trend=""},
 	["Corn"] =  {name="farming:corn", amount=1000, price=7, trend=""},
 	["Coffee Beans"] =  {name="farming:coffee_beans", amount=1000, price=7, trend=""},
-	["Barley Seed"] =  {name="farming:barley", amount=1000, price=7, trend=""},
+	["Barley Seed"] =  {name="farming:seed_barley", amount=1000, price=7, trend=""},
 	["Cocoa Beans"] =  {name="farming:cocoa_beans", amount=1000, price=7, trend=""},
+	["Jungle Tree"] =  {name="default:jungletree", amount=1000, price=7, trend=""},
+	["Pine Tree"] =  {name="default:pine_tree", amount=1000, price=7, trend=""},
+	["Aspen Tree"] =  {name="default:aspen_tree", amount=1000, price=7, trend=""},
+	["Apple Tree"] =  {name="default:tree", amount=1000, price=7, trend=""},
 }
+
+stock_exchange = {}
+
+local storage = minetest.get_mod_storage()
+local players = minetest.deserialize(storage:get_string("Players")) or {}
+local Stock   = minetest.deserialize(storage:get_string("Stock")) or DefaultStock
+
+
+--
+-- Delete old players
+--
+Players = {}
+for k,v in pairs(players) do
+	if minetest.player_exists(k) then
+		Players[k] = v
+	else
+		print("Player "..k.." is gone.")
+	end
+end
+
+--
+-- Update Stock table
+--
+for k,v in pairs(DefaultStock) do
+	if Stock[k] == nil then
+		Stock[k] = v
+	end
+end
+
+
+local function update_mod_storage()
+	storage:set_string("Players", minetest.serialize(Players))
+	storage:set_string("Stock", minetest.serialize(Stock))
+end
+
+local new_day = true
+local StartValue = 100
+local PerDayValue = 100
+
+local Orders = {}
+
+local ItemGroups = {
+	ores1 = {"Steel", "Copper", "Tin", "Gold", "Silver", "Mithril"},
+	ores2 = {"Coal", "Flint", "Mese", "Diamond"},
+	food = {"Apple", "Melon Slice", "Raspberries", "Blueberries", "Grapes", "Bread", "Wheat"},
+	food2 = {"Carrot", "Potato", "Tomato", "Cucumber", "Pumpkin Slice", "Rhubarb", "Green Beans", "Chili Pepper"},
+	dyes = {"White dye", "Blue dye", "Green dye", "Yellow dye",	"Red dye", "Black dye"},
+	stones = {"Sandstone", "Desert Sandstone", "Silver Sandstone", "Desert Cobblestone", 
+		      "Mossy Cobblestone", "Terracotta", "Marble"},
+	corals = {"Coral Skeleton", "Brown Coral", "Orange Coral"},
+	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet", "Straw"},
+	seed = {"Cotton Seed", "Wheat Seed", "Corn", "Coffee Beans", "Hemp Seed", "Barley Seed", "Cocoa Beans"},
+	fuel = {"Bio Gas", "Bio Fuel", "Jungle Tree", "Pine Tree", "Aspen Tree", "Apple Tree"},
+}
+
+local tDescription = {
+	ores1 = "Erze",
+	ores2 = "Mineralien",
+	food = "Obst und Lebensmittel",
+	food2 = "Gemüse",
+	dyes = "Farben",
+	stones = "Steine",
+	corals = "Korallen",
+	others = "Sonstiges",
+	seed = "Saatgut und Korn",
+	fuel = "Kraftstoffe",
+}
+
+
+
+local lStockArticles = {}
+for k,v in pairs(Stock) do
+	table.insert(lStockArticles, k)
+end
 
 local function player_privs(player)
 	if player:get_player_name() ~= "JoSto" then
@@ -154,16 +188,22 @@ minetest.register_on_joinplayer(function(ObjectRef)
 	end
 	local idx = ObjectRef:hud_add({
 		hud_elem_type = "text",
-		position = {x = 0.75, y = 0.9},
-		offset = {x=-100, y = 20},
-		scale = {x = 100, y = 100},
-		text = Players[name].balance.." €",
-		number = 0xFFFFFF
+		position = { x = 0.5, y=1 },
+		text = string.format("%10.2f €", Players[name].balance),
+		scale = { x = 0, y = 0 },
+		alignment = { x = 1, y = 0},
+		direction = 1,
+		number = 0xFFFFFF,
+		offset = { x = 180, y = -100}
 	})		
 	Players[name].hud_idx = idx
 	player_privs(ObjectRef)
 end)
 
+local function price_fluctuation(article, amount)
+	local price = article.price * (1 + amount/12000.0)
+	article.price = price
+end
 
 function stock_exchange.player_has_money(name, price)
 	local player = minetest.get_player_by_name(name)
@@ -185,7 +225,7 @@ function stock_exchange.update_player_hud(name, amount)
 		end
 		local idx = Players[name].hud_idx
 		if idx ~= nil then
-			player:hud_change(idx, "text", Players[name].balance.." €")
+			player:hud_change(idx, "text", string.format("%10.2f €", Players[name].balance))
       return true
 		end
 	end
@@ -198,7 +238,7 @@ function stock_exchange.set_player_hud(name, amount)
 		Players[name].balance = amount
 		local idx = Players[name].hud_idx
 		if idx ~= nil then
-			player:hud_change(idx, "text", Players[name].balance.." €")
+			player:hud_change(idx, "text", string.format("%10.2f €", Players[name].balance))
 			return true
 		end
 	end
@@ -254,19 +294,18 @@ local function process_orders()
 	for name, orders in pairs(Orders) do
 		for _,order in ipairs(orders) do
 			if tonumber(order.price) ~= nil and tonumber(order.amount) ~= nil then
-				if order.transfer == "Verkaufen"
-				and tonumber(order.price) <= tonumber(Stock[order.item].price)
-				and order.state == "open" then
+				if order.transfer == "Verkaufen" and order.state == "open" then
 					local price = tonumber(order.price) * tonumber(order.amount)
-					--order.state = "expired"
 					order.state = "closed"
 					stock_exchange.update_player_hud(name, price)
-				elseif order.transfer == "Kaufen"
-				and tonumber(order.price) >= tonumber(Stock[order.item].price)
-				and order.state == "open" then
+					price_fluctuation(Stock[order.item], -order.amount)
+					minetest.log("action", name.." sells "..order.amount.." ".. order.item)
+				elseif order.transfer == "Kaufen" and order.state == "open" then
 					local price = tonumber(order.price) * tonumber(order.amount)
 					if stock_exchange.player_has_money(name, price) then
 						stock_exchange.update_player_hud(name, -price)
+						price_fluctuation(Stock[order.item], order.amount)
+						minetest.log("action", name.." buys "..order.amount.." "..order.item)
 						order.state = "closed"
 					end
 				end
@@ -283,9 +322,6 @@ local function good_morning()
 		new_day = false
 	elseif time ~= nil and time > 0.75 and time < 0.85 then
 		new_day = true
-	end
-	if time ~= nil and time > 0.375 and time < 0.75 then
-		process_orders()
 	end
 	minetest.after(20.0, good_morning)
 end
@@ -325,7 +361,7 @@ local function select_formspec(key)
 		default.gui_bg_img..
 		default.gui_slots..
 		"label[3.5,0; Minetest Börse]"}
-	tRes[2] = "label[2.4,0.6;Artikel]label[3.9,0.6;Preis]label[5,0.6;Trend]"..
+	tRes[2] = "label[2.4,0.6;Artikel]label[3.7,0.6;Preis]label[5,0.6;Trend]"..
 			  "label[6.4,0.6;Kaufen]label[8,0.6;Verkaufen]"
 	for idx,item in ipairs(ItemGroups[key]) do
 		if Stock[item] then
@@ -336,7 +372,7 @@ local function select_formspec(key)
 			tRes[#tRes+1] = "label[0.2,"..ypos2..";"..item.."]"
 			tRes[#tRes+1] = "box[2.3,"..ypos3..";1,0.9;#555555]"
 			tRes[#tRes+1] = "item_image[2.4,"..ypos3..";1,1;"..Stock[item].name.."]"
-			tRes[#tRes+1] = "label[3.9,"..ypos2..";"..Stock[item].price.." €]"
+			tRes[#tRes+1] = "label[3.4,"..ypos2..";"..string.format("%6.2f", Stock[item].price).." €]"
 			tRes[#tRes+1] = "image[5,"..ypos2..";stock_exchange_arrow.png]"
 			tRes[#tRes+1] = "button_exit[6.3,"..ypos..";1,1;"..item..";buy]"
 			tRes[#tRes+1] = "button_exit[8,"..ypos..";1,1;"..item..";sell]"
@@ -347,6 +383,7 @@ end
 
 
 local function buy_formspec(item)
+	local price = string.format("%6.2f", Stock[item].price * 1.01)
 	return "size[8,5]"..
 		default.gui_bg..
 		default.gui_bg_img..
@@ -356,14 +393,14 @@ local function buy_formspec(item)
 		"item_image[0.4,1.1;1,1;"..Stock[item].name.."]"..
 		"label[2,1.0;Artikel:]label[4.5,1.0;"..item.."]"..
 		"label[2,1.6;Verfügbar:]label[4.5,1.6;"..Stock[item].amount.." Stück]"..
-		"label[2,2.2;zum Preis:]label[4.5,2.2;"..Stock[item].price.." €]"..
-		"label[1,3.4;Ich kaufe:]"..
+		"label[2,2.2;zum Preis:]label[4.5,2.2;"..price.." €]"..
+		"label[2,3.4;Ich kaufe:]"..
 		"field[1,4.6;2,1;number;Stück;10]"..
-		"field[3.2,4.6;2,1;price;zum Preis;"..Stock[item].price.."]"..
 		"button_exit[5.2,4.3;1.8,1;buy;Kaufen]"
 end	
 
 local function sell_formspec(item, spos)
+	local price = string.format("%6.2f", Stock[item].price * 0.99)
 	return "size[8,9]"..
 		default.gui_bg..
 		default.gui_bg_img..
@@ -373,10 +410,9 @@ local function sell_formspec(item, spos)
 		"item_image[0.4,1.1;1,1;"..Stock[item].name.."]"..
 		"label[2,1.0;Artikel:]label[4.5,1.0;"..item.."]"..
 		"label[2,1.5;Nachfrage:]label[4.5,1.5;"..Stock[item].amount.." Stück]"..
-		"label[2,2;zum Preis:]label[4.5,2;"..Stock[item].price.." €]"..
-		"label[0.4,2.8;Ich verkaufe:]"..
+		"label[2,2;zum Preis:]label[4.5,2;"..price.." €]"..
+		"label[2,2.8;Ich verkaufe:]"..
 		"list[nodemeta:"..spos..";src;1.1,3.5;1,1;]"..
-		"field[3.2,3.8;2,1;price;zum Preis;"..Stock[item].price.."]"..
 		"button_exit[5.2,3.5;2,1;sell;Verkaufen]"..
 		"list[current_player;main;0,5;8,4;]"..
 		"listring[nodemeta:"..spos..";src]"..
@@ -419,6 +455,16 @@ function stock_exchange.add_to_players_inventory(player_name, item_name, amount)
 	return true
 end
 
+local function stock_open(player)
+	local time = minetest.get_timeofday()
+	if time ~= nil and time > 0.375 and time < 0.75 then
+		return true
+	else
+		chat(player:get_player_name(), "Die Börse hat jetzt zu. Öffnungszeiten: 9:00 - 18:00 Uhr. Und Tschüss :-)")
+		return false
+	end
+end	
+
 local function on_player_receive_fields(player, formname, fields)
 	local player_name = player:get_player_name()
 	if formname == "stock_exchange:block_type" then			-- select block type?
@@ -445,10 +491,9 @@ local function on_player_receive_fields(player, formname, fields)
 				if amount then
 					amount = math.min(amount, 99)
 				end
-				local price = tonumber(fields.price)
-				if amount ~= nil and amount > 0 and price ~= nil and price > 0 then
+				if amount ~= nil and amount > 0 then
 					Orders[player_name][#Orders[player_name]+1] = {transfer=fields.buy, item=item, 
-								amount=amount, price=price, state="open", placed=0}
+								amount=amount, price=Stock[item].price, state="open", item=item}
 				end
 			end
 		end
@@ -463,10 +508,9 @@ local function on_player_receive_fields(player, formname, fields)
 			if Orders[player_name] == nil then
 				Orders[player_name] = {}
 			end
-			local price = tonumber(fields.price)
-			if amount > 0 and price ~= nil and price > 0 then
+			if amount ~= nil and amount > 0 then
 				Orders[player_name][#Orders[player_name]+1] = {transfer=fields.sell, item=item, 
-							amount=amount, price=price, state="open", placed=0}
+							amount=amount, price=Stock[item].price, state="open", item=item}
 			end
 		end
 	elseif formname == "stock_exchange:orders" then		-- delete transfer list item?
@@ -474,9 +518,9 @@ local function on_player_receive_fields(player, formname, fields)
 		if idx then
 			local order = Orders[player_name][idx]
 			local res = true
-			if order.transfer == "Kaufen" and order.state == "closed" then
+			if order and order.transfer == "Kaufen" and order.state == "closed" then
 				res = stock_exchange.add_to_players_inventory(player_name, Stock[order.item].name, order.amount)
-			elseif order.transfer == "Verkaufen" and order.state == "open" then
+			elseif order and order.transfer == "Verkaufen" and order.state == "open" then
 				res = stock_exchange.add_to_players_inventory(player_name, Stock[order.item].name, order.amount)
 			end
 			if res then
@@ -484,6 +528,7 @@ local function on_player_receive_fields(player, formname, fields)
 			end
 		end
 	end
+	process_orders()
 end
 
 minetest.register_on_player_receive_fields(on_player_receive_fields)
@@ -519,15 +564,17 @@ minetest.register_node("stock_exchange:stock", {
 	end,
 	
 	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
-		clicker:set_attribute("stock_pos", minetest.pos_to_string(pos))
-		local meta = minetest.get_meta(pos)
-		local res = meta:get_string("selection")
-		if res ~= "" then
-			minetest.show_formspec(clicker:get_player_name(), 
-						"stock_exchange:select", select_formspec(res))
-		else
-			minetest.show_formspec(clicker:get_player_name(), 
-						"stock_exchange:block_type", block_type_formspec())
+		if stock_open(clicker) then
+			clicker:set_attribute("stock_pos", minetest.pos_to_string(pos))
+			local meta = minetest.get_meta(pos)
+			local res = meta:get_string("selection")
+			if res ~= "" then
+				minetest.show_formspec(clicker:get_player_name(), 
+							"stock_exchange:select", select_formspec(res))
+			else
+				minetest.show_formspec(clicker:get_player_name(), 
+							"stock_exchange:block_type", block_type_formspec())
+			end
 		end
 	end,
 	
@@ -564,7 +611,7 @@ local function orders_formspec(name)
 				tRes[#tRes+1] = "label[0.1,"..ypos..";"..order.transfer.."]"
 				tRes[#tRes+1] = "label[1.6,"..ypos..";"..order.item.."]"
 				tRes[#tRes+1] = "label[4.4,"..ypos..";"..order.amount.."]"
-				tRes[#tRes+1] = "label[5.6,"..ypos..";"..order.price.." €]"
+				tRes[#tRes+1] = "label[5.6,"..ypos..";"..string.format("%6.2f €]", order.price)
 				tRes[#tRes+1] = "label[6.8,"..ypos..";"..order.state.."]"
 				tRes[#tRes+1] = "button_exit[8,"..ypos..";1,0.6;btn"..idx..";x]"
 			end
@@ -618,7 +665,7 @@ local function award_formspec(players)
 			end
 			local ypos = idx*0.6
 			tRes[#tRes+1] = "label[1,"..ypos..";"..player.name.."]"
-			tRes[#tRes+1] = "label[5,"..ypos..";"..player.balance.." €]"
+			tRes[#tRes+1] = "label[5,"..ypos..";"..string.format("%6.2f €]", player.balance)
 		end
 		return table.concat(tRes)
 end	
@@ -686,75 +733,20 @@ minetest.register_node("stock_exchange:mirror_glass", {
 	groups = {cracky = 3},
 })
 
-minetest.register_chatcommand("stock_orders", {
-	params = "<PlayerName>",
-	description = "Output all orders",
-	func = function(name, param)
-		local player_name = param:match('^(%S+)$')
-
-		if player_name == nil then
-			return false, "[Stock] Syntax: stock_orders <PlayerName>"
-		end
-		if minetest.check_player_privs(name, "creative") then
-			print("List of Orders:", Orders)
-			print("List of Players:", Players)
-			for name, items in pairs(Orders) do
-				for _, order in ipairs(items) do
-					print(name, order.transfer, order.item, order.amount, order.price, order.state)
-				end
-			end
-		else
-			return false, "[Stock] Priv missing"
-		end
-	end,
-})
-
+local function share_price()
+	local idx = math.random(#lStockArticles)
+	local amount = math.random(-8, 8) * 99
+	local article = Stock[lStockArticles[idx]]
+	price_fluctuation(article, amount)
+	minetest.after(math.random(120,480), share_price)
+end
 
 good_morning()
+share_price()
 
---dofile(minetest.get_modpath("stock_exchange") .. "/letters.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/homedecor.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/commands.lua")
 dofile(minetest.get_modpath("stock_exchange") .. "/skins.lua")
-
-
--------------------------------------------------------------------------------
--- Data Maintenance
--------------------------------------------------------------------------------
---local function data_maintenance()
---	-- Add time for aging of player accounts
---	local day_cnt = minetest.get_day_count()
---	local Tbl = table.copy(Players)
---	for name,item in pairs(Tbl) do
---		if Players[name].time == nil then
---			Players[name].time = minetest.get_gametime()
---		elseif (Players[name].time + ) < minetest.get_gametime() then
---		end
---	end
---	else
---		-- Remove old unused positions
---		local Tbl = table.copy(Number2Pos)
---		Number2Pos = {}
---		local day_cnt = minetest.get_day_count()
---		for num,item in pairs(Tbl) do
---			if item.name then
---				Number2Pos[num] = item
---			-- data not older than 5 real days
---			elseif item.time and (item.time + 360) > day_cnt then
---				Number2Pos[num] = item
---			else
---				print("Position deleted", num)
---			end
---		end
---	end
---	print("[Tubelib] Data maintenance finished")
---end	
-	
---generate_Key2Number()
-
----- maintain data after one minute
----- (minetest.get_day_count() will not be valid at start time)
---minetest.after(60, data_maintenance)
 
 
 print ("[MOD] Stock Exchange loaded")
