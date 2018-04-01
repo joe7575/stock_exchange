@@ -114,6 +114,9 @@ for k,v in pairs(DefaultStock) do
 	if Stock[k] == nil then
 		Stock[k] = v
 	end
+	local price = (Stock[k].price * 5 + DefaultStock[k].price) / 6.0
+	minetest.log("action", string.format(" Preis alt / dflt / neu: %7.2f / %7.2f / %7.2f", Stock[k].price, DefaultStock[k].price, price))
+	Stock[k].price = price
 end
 
 
