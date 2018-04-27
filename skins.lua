@@ -11,69 +11,38 @@
 ]]--
 
 tSkins = {
-	{"Sam 0", 'Sam_0_by_Jordach'},
-	{"Sam 1", 'Sam_I_by_Jordach'},
-	{"Iron Man", 'Iron_Man_MK._7_by_Jordach'},
-	{"Clown", 'Claude-the_Clown_by_Jimmey'},
-	{"Tuxedo Sam", 'Tuxedo_Sam_by_Jordach'},
-	{"G-Robo", 'G-Robo_v5000_by_philipbenr'},
-	{"jojoa1997", 'jojoa1997_by_jojoa1997'},
-	{"Farmer Sam", 'Demon_Farmer_Sam_by_sdzen'},
-	{"Summer Sam", 'Summer_Sam_by_philipbenr'},
-	{"Infantry Man", 'Infantry_man_by_philipbenr'},
-	{"Zombie", 'Zombie_by_viv100'},
 	{"CaligoPL", 'CaligoPL_by_CaligoPL'},
-	{"Diamond Sam", 'Diamond_Armor_Sam_by_Block_Guy'},
-	{"SuperSam", 'SuperSam_by_AMMOnym'},
-	{"lordphoenixmh", 'lordphoenixmh_by_lordphoenixmh'},
 	{"4 degree", '4-deg'},
+	{"jojoa1997", 'jojoa1997_by_jojoa1997'},
+	{"Infantry Man", 'Infantry_man_by_philipbenr'},
+	{"gato rojo", 'gato_rojo_by_edwar_masterchieft'},
+	{"minion", "minion_by_daniel_pereira"},
+	{"chco_cool", "chco_cool_by_daniel_pereira"},
+	{"Billr", "Billr_by_RedCat"},
 	
-	{"Female Sam", 'Female_Sam_by_Jordach'},
-	{"Ashley", 'Ashley_by_loupicate'},
-	{"Aurora", 'Aurora_by_WD8Ubisoft'},
-	{"Beatch Girl", 'beatch_girl_by_lovehart'},
-	{"Camille", 'Camille_by_loupicate'},
-	{"Charlotte", 'Charlotte_by_Sporax'},
 	{"Alejandra", 'alejandra_by_rexyGYM'},
-	{"Samantha", 'Samantha_I_by_philipbenr'},
 	{"Summer", 'Summer_by_lizzie'},
-	{"Lisa", 'lisa_by_hansuke123'},
-	{"Emma", 'Emma_by_Cidney7760'},
-	{"Malon", 'Malon_by_SummerCampV'},
-	{"Ladyvioletkitty", 'Ladyvioletkitty_by_lordphoenixmh'},
-	{"Mammu", 'Mammu_by_hansuke123'},
-	{"Dante", 'Dante_by_bajanhgk'},
-	{"Jayne", 'Jayne_by_Andromeda'},
+	{"Ashley", 'Ashley_by_loupicate'},
+	{"Charlotte", 'Charlotte_by_Sporax'},
+	{"Aurora", 'Aurora_by_WD8Ubisoft'},
+	{"Rainbowcutie", "Rainbowcutie_by_Lovelyrose"},
+	{"Help_me_name_this_2", "Help_me_name_this_2_by_Rin0002"},
+	{"Help_me_name_this", "Help_me_name_this_by_Rin0002"},
 	
-	{"Gangnam Style", 'Gangnam_Style_by_Ferdi_Napoli'},
-	{"Daffy Duck", 'Daffy_Duck_by_LuxAtheris'},
-	{"DareDevil", 'DareDevil_by_Ferdi_Napoli'},
-	{"Clone", 'Clone_by_Ferdi_Napoli'},
-	{"Jesus", 'Jesus_by_Ferdi_Napoli'},
 	{"Wires", 'Wires_by_Geopbyte'},
-	{"PenguinDad", 'PenguinDad_by_PenguinDad'},
-	{"wheat_farmer", 'wheat_farmer_by_addi'},
-	{"Spider man", 'Spider_man_by_bajanhgk'},
-	{"In the Navy", 'In_the_Navy_by_Bob_Hovercraft'},
-	{"Hunky Simon", 'Hunky_Simon_by_Andromeda'},
 	{"cheapie", 'cheapie_by_lovehart'},
 	{"Michal Flynee", 'Michal_VonFlynee_by_Michal_VonFlynee'},
-	{"gato rojo", 'gato_rojo_by_edwar_masterchieft'},
-	{"war-sloop", 'war-sloop_by_ange_black69'},
+	{"Clone", 'Clone_by_Ferdi_Napoli'},
 	{"Batman", 'Batman_by_unknown'},
-
-	{"blue girl", 'blue_girl_by_lovehart'},
-	{"DanTDM Girl", 'DanTDM_Girl_by_Hansuke123'},
-	{"Female Skin", 'Female_Skin_by_Guvienov'},
-	{"farmer girl", 'farmer_girl_pink_and_green_by_Misty'},
-	{"Pirate girl", 'Pirate_girl_by_Misty'},
-	{"Violette", 'Violette_by_nelly'},
-	{"Julie", 'Julie_by_nelly'},
-	{"Julia", 'Julia_by_nelly'},
-	{"Iris", 'Iris_by_loupicate'},
-	{"Halloween Girl", 'Halloween_Girl_by_ElMehdiBen'},
-	{"Santa Claus", 'santa_by_jordan4ibanez'},
+	{"PenguinDad", 'PenguinDad_by_PenguinDad'},
+	{"REDboycool", "REDboycool_by_julito"},
+	{"Toothless", "Toothless_by_AcidDragon"},
+	
 	{"Cool Girl", 'Cool_Girl_by_ElMehdiBen'},
+	{"blue girl", 'blue_girl_by_lovehart'},
+	{"Julia", 'Julia_by_nelly'},
+	{"Halloween Girl", 'Halloween_Girl_by_ElMehdiBen'},
+	{"White_Music_Girl", "White_Music_Girl_by_ElMehdiBen"},
 }
 
 MAX_SKIN 	 = #tSkins
@@ -82,7 +51,7 @@ MAX_PER_ROW  = 8
 PRICE        = 100
 
 local function buy_formspec(image, desc)
-	return "size[6,6"..
+	return "size[6,6]"..
 		default.gui_bg..
 		default.gui_bg_img..
 		default.gui_slots..
@@ -119,14 +88,10 @@ local function update_player_skin(player, idx)
 	if not player then
 		return
 	end
-	local item = tSkins[idx] or tSkins[1]
-
---	if armor_mod then -- if 3D_armor's installed, let it set the skin
---		armor.textures[player:get_player_name()].skin = img_name
---		armor:update_player_visuals(player)
---	else
+	local item = tSkins[idx]
+	if item then
 		player:set_properties({textures = {item[2]..".png"}})
---	end
+	end
 end
 
 
@@ -138,6 +103,7 @@ local function on_player_receive_fields(player, formname, fields)
 				player:set_attribute("skin_shop_item", "stock_exchange:skin"..i)
 				local image = tSkins[i][2].."_preview.png"
 				local desc = tSkins[i][1]
+				print("buy_formspec(image, desc)", buy_formspec(image, desc))
 				minetest.show_formspec(player_name, "stock_exchange:skin_buy", buy_formspec(image, desc))
 				break
 			end
