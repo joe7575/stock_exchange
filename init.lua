@@ -17,6 +17,7 @@
 	2017-08-23  v0.04  Cactus added
 	2017-08-28  v0.05  Sell Cancel bugfix
 	2018-03-31  v0.06  price fluctuation added
+	2019-05-11  v0.07  Money introduced, order formspec removed
 
 ]]--
 
@@ -86,6 +87,10 @@ local DefaultStock = {
 	["Pine Tree"] =  {name="default:pine_tree", amount=1000, price=7, trend=""},
 	["Aspen Tree"] =  {name="default:aspen_tree", amount=1000, price=7, trend=""},
 	["Apple Tree"] =  {name="default:tree", amount=1000, price=7, trend=""},
+	["Schein 1€"] = {name="stock_exchange:geld1E", amount=1000, price=1, trend=""},
+	["Schein 10€"] = {name="stock_exchange:geld10E", amount=1000, price=10, trend=""},
+	["Schein 100€"] = {name="stock_exchange:geld100E", amount=1000, price=100, trend=""},
+	["Schein 1000€"] = {name="stock_exchange:geld1000E", amount=1000, price=1000, trend=""},
 }
 
 stock_exchange = {}
@@ -143,6 +148,7 @@ local ItemGroups = {
 	others = {"Cactus", "Paper", "Cotton", "White Wool", "Coins", "Plastic sheet", "Straw"},
 	seed = {"Cotton Seed", "Wheat Seed", "Corn", "Coffee Beans", "Hemp Seed", "Barley Seed", "Cocoa Beans"},
 	fuel = {"Bio Gas", "Bio Fuel", "Jungle Tree", "Pine Tree", "Aspen Tree", "Apple Tree"},
+	money = {"Schein 1€", "Schein 10€", "Schein 100€", "Schein 1000€"},
 }
 
 local tDescription = {
@@ -156,6 +162,7 @@ local tDescription = {
 	others = "Sonstiges",
 	seed = "Saatgut und Korn",
 	fuel = "Kraftstoffe",
+	money = "Geld",
 }
 
 
@@ -204,8 +211,10 @@ minetest.register_on_joinplayer(function(ObjectRef)
 end)
 
 local function price_fluctuation(article, amount)
-	local price = article.price * (1 + amount/12000.0)
-	article.price = price
+	if minetest.get_item_group(article.name, "money") == 0 then
+		local price = article.price * (1 + amount/12000.0)
+		article.price = price
+	end
 end
 
 function stock_exchange.player_has_money(name, price)
@@ -292,29 +301,29 @@ local function daily_payment()
 	end
 end	
 
--- cyclically called to check if any order has to be performed
-local function process_orders()
-	for name, orders in pairs(Orders) do
-		for _,order in ipairs(orders) do
-			if tonumber(order.price) ~= nil and tonumber(order.amount) ~= nil then
-				if order.transfer == "Verkaufen" and order.state == "open" then
-					local price = tonumber(order.price) * tonumber(order.amount)
-					order.state = "closed"
-					stock_exchange.update_player_hud(name, price)
-					price_fluctuation(Stock[order.item], -order.amount)
-					minetest.log("action", name.." sells "..order.amount.." ".. order.item)
-				elseif order.transfer == "Kaufen" and order.state == "open" then
-					local price = tonumber(order.price) * tonumber(order.amount)
-					if stock_exchange.player_has_money(name, price) then
-						stock_exchange.update_player_hud(name, -price)
-						price_fluctuation(Stock[order.item], order.amount)
-						minetest.log("action", name.." buys "..order.amount.." "..order.item)
-						order.state = "closed"
-					end
-				end
+-- 
+local function process_order(name, transfer, item, price, amount)
+	if tonumber(price) ~= nil and tonumber(amount) ~= nil then
+		local price = tonumber(price) * tonumber(amount)
+		if transfer == "Verkaufen" then
+			price = price * 0.99
+			stock_exchange.update_player_hud(name, price)
+			price_fluctuation(Stock[item], -amount)
+			minetest.log("action", name.." sells "..amount.." ".. item)
+			return true
+		elseif transfer == "Kaufen" then
+			price = price * 1.01
+			if stock_exchange.player_has_money(name, price) then
+				stock_exchange.update_player_hud(name, -price)
+				price_fluctuation(Stock[item], amount)
+				minetest.log("action", name.." buys "..amount.." "..item)
+				return true
+			else
+				chat(name, "Error: Zu wenig Geld!")
 			end
 		end
 	end
+	return false
 end
 
 local function good_morning()
@@ -337,7 +346,7 @@ local function block_type_formspec()
 		default.gui_slots..
 		"label[1,0; Minetest Börse]"..
 		"label[1,0.6;Type of Block:]"..
-		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Food2,Stones,Corals,Seed,Fuel,Others]"..
+		"textlist[1,1;2,1;block_type;Ores1,Ores2,Dyes,Food,Food2,Stones,Corals,Seed,Fuel,Money,Others]"..
 		"button_exit[1.5,2.5;1,0.8;exit;OK]"
 end
 
@@ -346,7 +355,7 @@ local function block_type_result(player, fields)
 	local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
 	local meta = minetest.get_meta(pos)
 	if fields.block_type then
-		local tbl = {"ores1","ores2","dyes","food", "food2", "stones", "corals", "seed", "fuel", "others"}
+		local tbl = {"ores1","ores2","dyes","food", "food2", "stones", "corals", "seed", "fuel", "money", "others"}
 		local idx = tonumber(string.sub(fields.block_type, 5))
 		meta:set_string("selection", tbl[idx])
 	elseif fields.exit == "OK" then
@@ -387,6 +396,7 @@ end
 
 local function buy_formspec(item)
 	local price = string.format("%6.2f", Stock[item].price * 1.01)
+		
 	return "size[8,5]"..
 		default.gui_bg..
 		default.gui_bg_img..
@@ -397,13 +407,14 @@ local function buy_formspec(item)
 		"label[2,1.0;Artikel:]label[4.5,1.0;"..item.."]"..
 		"label[2,1.6;Verfügbar:]label[4.5,1.6;"..Stock[item].amount.." Stück]"..
 		"label[2,2.2;zum Preis:]label[4.5,2.2;"..price.." €]"..
-		"label[2,3.4;Ich kaufe:]"..
+		"label[2,3.4;Ich kaufe (max. 396 Stück):]"..
 		"field[1,4.6;2,1;number;Stück;10]"..
 		"button_exit[5.2,4.3;1.8,1;buy;Kaufen]"
 end	
 
 local function sell_formspec(item, spos)
 	local price = string.format("%6.2f", Stock[item].price * 0.99)
+	
 	return "size[8,9]"..
 		default.gui_bg..
 		default.gui_bg_img..
@@ -414,8 +425,8 @@ local function sell_formspec(item, spos)
 		"label[2,1.0;Artikel:]label[4.5,1.0;"..item.."]"..
 		"label[2,1.5;Nachfrage:]label[4.5,1.5;"..Stock[item].amount.." Stück]"..
 		"label[2,2;zum Preis:]label[4.5,2;"..price.." €]"..
-		"label[2,2.8;Ich verkaufe:]"..
-		"list[nodemeta:"..spos..";src;1.1,3.5;1,1;]"..
+		"label[0,2.8;Ich verkaufe:]"..
+		"list[nodemeta:"..spos..";src;0,3.6;4,1;]"..
 		"button_exit[5.2,3.5;2,1;sell;Verkaufen]"..
 		"list[current_player;main;0,5;8,4;]"..
 		"listring[nodemeta:"..spos..";src]"..
@@ -430,16 +441,6 @@ local function formspec_order(fields)
 		end
 	end
 	return nil, nil
-end
-
--- helper function to interprete user input
-local function formspec_cancel(fields)
-	for k,v in pairs(fields) do
-		if string.sub(k, 1, 3) == "btn" then
-			return tonumber(string.sub(k, 4))
-		end
-	end
-	return nil
 end
 
 function stock_exchange.add_to_players_inventory(player_name, item_name, amount)
@@ -486,17 +487,22 @@ local function on_player_receive_fields(player, formname, fields)
 	elseif formname == "stock_exchange:buy" then		-- buy an item?
 		if fields.buy == "Kaufen" then
 			local item = player:get_attribute("stock_item")
-			if Orders[player_name] == nil then
-				Orders[player_name] = {}
-			end
 			if fields.number ~= nil then
 				local amount = tonumber(fields.number)
-				if amount then
-					amount = math.min(amount, 99)
-				end
 				if amount ~= nil and amount > 0 then
-					Orders[player_name][#Orders[player_name]+1] = {transfer=fields.buy, item=item, 
-								amount=amount, price=Stock[item].price, state="open", item=item}
+					amount = math.min(amount, 4*99)
+					while amount > 0 do
+						local num = math.min(amount, 99)
+						if process_order(player_name, "Kaufen", item, Stock[item].price, num) then
+							if stock_exchange.add_to_players_inventory(player_name, Stock[item].name, num) then
+								amount = amount - num
+							else
+								break
+							end
+						else
+							break
+						end
+					end
 				end
 			end
 		end
@@ -505,33 +511,20 @@ local function on_player_receive_fields(player, formname, fields)
 			local item = player:get_attribute("stock_item")
 			local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
 			local inv = minetest.get_inventory({type="node", pos=pos})
-			local stack = ItemStack(Stock[item].name.." 99")
-			local taken = inv:remove_item("src", stack)
-			local amount = taken:get_count()
-			if Orders[player_name] == nil then
-				Orders[player_name] = {}
+			local amount = 0
+			while true do
+				local stack = ItemStack(Stock[item].name.." 99")
+				local taken = inv:remove_item("src", stack)
+				if taken:get_count() == 0 then
+					break
+				end
+				amount = amount + taken:get_count()
 			end
 			if amount ~= nil and amount > 0 then
-				Orders[player_name][#Orders[player_name]+1] = {transfer=fields.sell, item=item, 
-							amount=amount, price=Stock[item].price, state="open", item=item}
-			end
-		end
-	elseif formname == "stock_exchange:orders" then		-- delete transfer list item?
-		local idx = formspec_cancel(fields)
-		if idx then
-			local order = Orders[player_name][idx]
-			local res = true
-			if order and order.transfer == "Kaufen" and order.state == "closed" then
-				res = stock_exchange.add_to_players_inventory(player_name, Stock[order.item].name, order.amount)
-			elseif order and order.transfer == "Verkaufen" and order.state == "open" then
-				res = stock_exchange.add_to_players_inventory(player_name, Stock[order.item].name, order.amount)
-			end
-			if res then
-				table.remove(Orders[player_name], idx)
+				process_order(player_name, "Verkaufen", item, Stock[item].price, amount)
 			end
 		end
 	end
-	process_orders()
 end
 
 minetest.register_on_player_receive_fields(on_player_receive_fields)
@@ -558,12 +551,8 @@ minetest.register_node("stock_exchange:stock", {
 	
 	after_place_node = function(pos, placer)
 		local meta = minetest.get_meta(pos)
-		--meta:set_string("infotext", "Erze und Mineralien")
-		--meta:set_string("formspec", formspec("ores"))
-		--local pos = minetest.string_to_pos(player:get_attribute("pos"))
-		--local meta = minetest.get_meta(pos)
 		local inv = meta:get_inventory()
-		inv:set_size('src', 1)
+		inv:set_size('src', 4)
 	end,
 	
 	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
@@ -591,39 +580,6 @@ minetest.register_node("stock_exchange:stock", {
 	is_ground_content = false,
 })
 
-local function orders_formspec(name)
---	Orders[name] = {
---		{transfer="Verkaufen", item="Coal", amount=50, price=100, state="open", placed=0},
---		{transfer="Kaufen", item="Iron", amount=250, price=50, state="open", placed=0},
---	}
-	local tRes = {"size[9.4,10]"..
-		default.gui_bg..
-		default.gui_bg_img..
-		default.gui_slots..
-		"label[3.6,0; Deine Aufträge]"}
-		tRes[2] = "label[0.1,0.6;Vorgang]label[1.6,0.6;Artikel]label[4.4,0.6;Stück]"..
-					"label[5.6,0.6;Preis]label[6.8,0.6;Status]label[8,0.6;Löschen]"
-		local idx = 0
-		if Orders[name] ~= nil and #Orders[name] > 0 then
-			for _,order in ipairs(Orders[name]) do
-				idx = idx + 1
-				if idx >= 11 then
-					break
-				end
-				local ypos = 0.7 + idx*0.7
-				tRes[#tRes+1] = "label[0.1,"..ypos..";"..order.transfer.."]"
-				tRes[#tRes+1] = "label[1.6,"..ypos..";"..order.item.."]"
-				tRes[#tRes+1] = "label[4.4,"..ypos..";"..order.amount.."]"
-				tRes[#tRes+1] = "label[5.6,"..ypos..";"..string.format("%6.2f €]", order.price)
-				tRes[#tRes+1] = "label[6.8,"..ypos..";"..order.state.."]"
-				tRes[#tRes+1] = "button_exit[8,"..ypos..";1,0.6;btn"..idx..";x]"
-			end
-		end
-		tRes[#tRes+1] = "label[0,9;Die Artikel werden beim Löschvorgang wieder\n"..
-						"deinem Inventory hinzugefügt,\n sofern dort ausreichend Platz ist.]"
-		return table.concat(tRes)
-end	
-
 minetest.register_node("stock_exchange:order", {
 	description = "Stock Orders",
 	tiles = {
@@ -638,16 +594,6 @@ minetest.register_node("stock_exchange:order", {
 			{ -8/16, -8/16, 7/16,  8/16,  8/16, 8/16},
 		},
 	},
-	
-	after_place_node = function(pos, placer)
-		local meta = minetest.get_meta(pos)
-		meta:set_string("infotext", "Aufträge")
-	end,
-	
-	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
-		minetest.show_formspec(clicker:get_player_name(), "stock_exchange:orders", 
-					orders_formspec(clicker:get_player_name()))
-	end,
 	
 	paramtype = 'light',
 	light_source = 2,
@@ -734,6 +680,46 @@ minetest.register_node("stock_exchange:mirror_glass", {
 	sunlight_propagates = true,
 	--sounds = default.node_sound_glass_defaults(),
 	groups = {cracky = 3},
+})
+
+-- Tool for tube workers to find the next station
+minetest.register_node("stock_exchange:geld1E", {
+	description = "Schein 1€",
+	inventory_image = "stock_exchange_1E.png",
+	on_place = function() return nil end,
+	on_use = function() return nil end,
+	groups = {money=1},
+	stack_max = 999,
+})
+
+-- Tool for tube workers to find the next station
+minetest.register_node("stock_exchange:geld10E", {
+	description = "Schein 10€",
+	inventory_image = "stock_exchange_10E.png",
+	on_place = function() return nil end,
+	on_use = function() return nil end,
+	groups = {money=1},
+	stack_max = 999,
+})
+
+-- Tool for tube workers to find the next station
+minetest.register_node("stock_exchange:geld100E", {
+	description = "Schein 100€",
+	inventory_image = "stock_exchange_100E.png",
+	on_place = function() return nil end,
+	on_use = function() return nil end,
+	groups = {money=1},
+	stack_max = 999,
+})
+
+-- Tool for tube workers to find the next station
+minetest.register_node("stock_exchange:geld1000E", {
+	description = "Schein 1000€",
+	inventory_image = "stock_exchange_1000E.png",
+	on_place = function() return nil end,
+	on_use = function() return nil end,
+	groups = {money=1},
+	stack_max = 999,
 })
 
 local function share_price()
