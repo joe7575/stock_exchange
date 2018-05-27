@@ -218,51 +218,43 @@ local function price_fluctuation(article, amount)
 end
 
 function stock_exchange.player_has_money(name, price)
-	local player = minetest.get_player_by_name(name)
-	if player ~= nil then
-		if Players[name].balance ~= nil then
-			return Players[name].balance >= price
-		end
+	if Players[name].balance ~= nil then
+		return Players[name].balance >= price
 	end
 	return false
 end
 
 function stock_exchange.update_player_hud(name, amount)
-	local player = minetest.get_player_by_name(name)
-	if player ~= nil then
-		if Players[name].balance ~= nil then
-			Players[name].balance = Players[name].balance + amount
-		else
-			Players[name].balance = amount
-		end
-		local idx = Players[name].hud_idx
-		if idx ~= nil then
+	if Players[name].balance ~= nil then
+		Players[name].balance = Players[name].balance + amount
+	else
+		Players[name].balance = amount
+	end
+	local idx = Players[name].hud_idx
+	if idx ~= nil then
+		local player = minetest.get_player_by_name(name)
+		if player ~= nil then
 			player:hud_change(idx, "text", string.format("%10.2f €", Players[name].balance))
-      return true
 		end
 	end
-	return false
+	return true
 end	
 
 function stock_exchange.set_player_hud(name, amount)
-	local player = minetest.get_player_by_name(name)
-	if player ~= nil then
-		Players[name].balance = amount
-		local idx = Players[name].hud_idx
-		if idx ~= nil then
+	Players[name].balance = amount
+	local idx = Players[name].hud_idx
+	if idx ~= nil then
+		local player = minetest.get_player_by_name(name)
+		if player ~= nil then
 			player:hud_change(idx, "text", string.format("%10.2f €", Players[name].balance))
-			return true
 		end
 	end
-	return false
+	return true
 end	
 
 function stock_exchange.get_player_account(name)
-	local player = minetest.get_player_by_name(name)
-	if player ~= nil then
-		if Players[name].balance ~= nil then
-			return Players[name].balance
-		end
+	if Players[name].balance ~= nil then
+		return Players[name].balance
 	end
 	return nil
 end
@@ -683,41 +675,33 @@ minetest.register_node("stock_exchange:mirror_glass", {
 })
 
 -- Tool for tube workers to find the next station
-minetest.register_node("stock_exchange:geld1E", {
+minetest.register_craftitem("stock_exchange:geld1E", {
 	description = "Schein 1€",
 	inventory_image = "stock_exchange_1E.png",
-	on_place = function() return nil end,
-	on_use = function() return nil end,
 	groups = {money=1},
 	stack_max = 999,
 })
 
 -- Tool for tube workers to find the next station
-minetest.register_node("stock_exchange:geld10E", {
+minetest.register_craftitem("stock_exchange:geld10E", {
 	description = "Schein 10€",
 	inventory_image = "stock_exchange_10E.png",
-	on_place = function() return nil end,
-	on_use = function() return nil end,
 	groups = {money=1},
 	stack_max = 999,
 })
 
 -- Tool for tube workers to find the next station
-minetest.register_node("stock_exchange:geld100E", {
+minetest.register_craftitem("stock_exchange:geld100E", {
 	description = "Schein 100€",
 	inventory_image = "stock_exchange_100E.png",
-	on_place = function() return nil end,
-	on_use = function() return nil end,
 	groups = {money=1},
 	stack_max = 999,
 })
 
 -- Tool for tube workers to find the next station
-minetest.register_node("stock_exchange:geld1000E", {
+minetest.register_craftitem("stock_exchange:geld1000E", {
 	description = "Schein 1000€",
 	inventory_image = "stock_exchange_1000E.png",
-	on_place = function() return nil end,
-	on_use = function() return nil end,
 	groups = {money=1},
 	stack_max = 999,
 })
