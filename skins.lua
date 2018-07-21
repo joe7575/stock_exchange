@@ -200,7 +200,9 @@ end
 
 -- load player skin on join
 minetest.register_on_joinplayer(function(player)
-	local idx = player:get_attribute("stock_exchange:skin_idx") or "1"
-	update_player_skin(player, tonumber(idx))
+	local idx = player:get_attribute("stock_exchange:skin_idx")
+	if idx then
+		update_player_skin(player, tonumber(idx))
+	end
 end)
 

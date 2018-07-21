@@ -289,7 +289,10 @@ end
 
 local function daily_payment()
 	for name, item in pairs(Players) do
-		stock_exchange.update_player_hud(name, PerDayValue)
+		local player = minetest.get_player_by_name(name)
+		if player ~= nil then
+			stock_exchange.update_player_hud(name, PerDayValue)
+		end
 	end
 end	
 
