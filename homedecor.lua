@@ -350,9 +350,10 @@ local function on_player_receive_fields(player, formname, fields)
 		elseif fields.quit ~= "true" then
 			local name,val = next(fields)
 			player:set_attribute("shop_item", name)
-			local desc = ItemLookup[name]
+			local desc = ItemLookup[name] or "<unknown>"
 			minetest.show_formspec(player_name, "stock_exchange:shop_buy", buy_formspec(name, desc))
 		end
+		return true
 	elseif formname == "stock_exchange:shop_buy" then
 		if fields.buy == "Kaufen" then
 			local number = fields.number or "1"
@@ -366,7 +367,9 @@ local function on_player_receive_fields(player, formname, fields)
 				end
 			end
 		end
+		return true
 	end
+	return false
 end
 
 

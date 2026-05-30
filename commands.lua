@@ -51,7 +51,7 @@ minetest.register_chatcommand("money_get", {
 			local value = stock_exchange.get_player_account(player_name)
 			if value then
 				value = string.format("%10.2f €", value)
-				return true, "[Stock] Player "..player_name.." has "..value.." €"
+				return true, "[Stock] Player "..player_name.." has "..value
 			end
 			return false, "[Stock] Unknown player"
 		else

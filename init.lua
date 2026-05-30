@@ -3,7 +3,7 @@
 	Stock Exchange
 	==============
 
-	v0.05 by JoSt
+	v0.08
 
 	Copyright (C) 2017 Joachim Stolberg
 
@@ -17,7 +17,8 @@
 	2017-08-23  v0.04  Cactus added
 	2017-08-28  v0.05  Sell Cancel bugfix
 	2018-03-31  v0.06  price fluctuation added
-	2019-05-11  v0.07  Money introduced, order formspec removed
+	2018-05-11  v0.07  Money introduced, order formspec removed
+	2018-09-09  v0.08  formspec bugfix 
 
 ]]--
 
@@ -98,19 +99,21 @@ stock_exchange = {}
 local storage = minetest.get_mod_storage()
 local players = minetest.deserialize(storage:get_string("Players")) or {}
 local Stock   = minetest.deserialize(storage:get_string("Stock")) or DefaultStock
+local Players = {}
 
 
 --
 -- Delete old players
 --
-Players = {}
-for k,v in pairs(players) do
-	if minetest.player_exists(k) then
-		Players[k] = v
-	else
-		print("Player "..k.." is gone.")
+minetest.after(1, function() 
+	for k,v in pairs(players) do
+		if minetest.player_exists(k) then
+			Players[k] = v
+		else
+			print("Player "..k.." is gone.")
+		end
 	end
-end
+end)
 
 --
 -- Update Stock table
@@ -119,7 +122,7 @@ for k,v in pairs(DefaultStock) do
 	if Stock[k] == nil then
 		Stock[k] = v
 	end
-	local price = (Stock[k].price * 20 + DefaultStock[k].price) / 21.0
+	local price = (Stock[k].price * 300 + DefaultStock[k].price) / 301.0
 	minetest.log("action", string.format(" Preis %20s alt / dflt / neu: %7.2f / %7.2f / %7.2f", k, Stock[k].price, DefaultStock[k].price, price))
 	Stock[k].price = price
 end
@@ -172,17 +175,6 @@ for k,v in pairs(Stock) do
 	table.insert(lStockArticles, k)
 end
 
-local function player_privs(player)
-	if player:get_player_name() ~= "JoSto" then
-		local privs = minetest.get_player_privs(player:get_player_name())
-		privs["fly"] = nil
-		privs["fast"] = nil
-		minetest.set_player_privs(player:get_player_name(), privs)
-    player:set_physics_override({gravity=1, speed=1})	
-	end
-end
-
-
 minetest.register_on_newplayer(function(ObjectRef)
 	local name = ObjectRef:get_player_name()
 	if name ~= "" then
@@ -197,7 +189,7 @@ minetest.register_on_joinplayer(function(ObjectRef)
 		Players[name] = {balance=StartValue}
 	end
 	local idx = ObjectRef:hud_add({
-		hud_elem_type = "text",
+		type = "text",
 		position = { x = 0.5, y=1 },
 		text = string.format("%10.2f €", Players[name].balance),
 		scale = { x = 0, y = 0 },
@@ -207,7 +199,6 @@ minetest.register_on_joinplayer(function(ObjectRef)
 		offset = { x = 180, y = -100}
 	})		
 	Players[name].hud_idx = idx
-	player_privs(ObjectRef)
 end)
 
 local function price_fluctuation(article, amount)
@@ -347,7 +338,7 @@ end
 
 -- helper function to interprete user input
 local function block_type_result(player, fields)
-	local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
+	local pos = minetest.string_to_pos(player:get_meta():get_string("stock_pos"))
 	local meta = minetest.get_meta(pos)
 	if fields.block_type then
 		local tbl = {"ores1","ores2","dyes","food", "food2", "stones", "corals", "seed", "fuel", "money", "others"}
@@ -468,20 +459,24 @@ local function on_player_receive_fields(player, formname, fields)
 	local player_name = player:get_player_name()
 	if formname == "stock_exchange:block_type" then			-- select block type?
 		block_type_result(player, fields)
+		return true
 	elseif formname == "stock_exchange:select" then			-- select an item ?
 		local item, transfer = formspec_order(fields)
 		if transfer == "buy" then
-			player:set_attribute("stock_item", item)
-			minetest.show_formspec(player_name, "stock_exchange:buy", buy_formspec(item))
+			player:get_meta():set_string("stock_item", item)
+			local s = buy_formspec(item)
+			minetest.after(0.1, minetest.show_formspec, player_name, "stock_exchange:buy", s)
 		elseif transfer == "sell" then
-			player:set_attribute("stock_item", item)
-			local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
+			player:get_meta():set_string("stock_item", item)
+			local pos = minetest.string_to_pos(player:get_meta():get_string("stock_pos"))
 			local spos = pos.x..","..pos.y..","..pos.z
-			minetest.show_formspec(player_name, "stock_exchange:sell", sell_formspec(item, spos))
+			local s = sell_formspec(item, spos)
+			minetest.after(0.1, minetest.show_formspec, player_name, "stock_exchange:sell", s)
 		end
+		return true
 	elseif formname == "stock_exchange:buy" then		-- buy an item?
 		if fields.buy == "Kaufen" then
-			local item = player:get_attribute("stock_item")
+			local item = player:get_meta():get_string("stock_item")
 			if fields.number ~= nil then
 				local amount = tonumber(fields.number)
 				if amount ~= nil and amount > 0 then
@@ -501,10 +496,11 @@ local function on_player_receive_fields(player, formname, fields)
 				end
 			end
 		end
+		return true
 	elseif formname == "stock_exchange:sell" then		-- sell an item?
 		if fields.sell == "Verkaufen" then
-			local item = player:get_attribute("stock_item")
-			local pos = minetest.string_to_pos(player:get_attribute("stock_pos"))
+			local item = player:get_meta():get_string("stock_item")
+			local pos = minetest.string_to_pos(player:get_meta():get_string("stock_pos"))
 			local inv = minetest.get_inventory({type="node", pos=pos})
 			local amount = 0
 			while true do
@@ -519,7 +515,9 @@ local function on_player_receive_fields(player, formname, fields)
 				process_order(player_name, "Verkaufen", item, Stock[item].price, amount)
 			end
 		end
+		return true
 	end
+	return false
 end
 
 minetest.register_on_player_receive_fields(on_player_receive_fields)
@@ -552,7 +550,7 @@ minetest.register_node("stock_exchange:stock", {
 	
 	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
 		if stock_open(clicker) then
-			clicker:set_attribute("stock_pos", minetest.pos_to_string(pos))
+			clicker:get_meta():set_string("stock_pos", minetest.pos_to_string(pos))
 			local meta = minetest.get_meta(pos)
 			local res = meta:get_string("selection")
 			if res ~= "" then
@@ -677,7 +675,6 @@ minetest.register_node("stock_exchange:mirror_glass", {
 	groups = {cracky = 3},
 })
 
--- Tool for tube workers to find the next station
 minetest.register_craftitem("stock_exchange:geld1E", {
 	description = "Schein 1€",
 	inventory_image = "stock_exchange_1E.png",
@@ -685,7 +682,6 @@ minetest.register_craftitem("stock_exchange:geld1E", {
 	stack_max = 999,
 })
 
--- Tool for tube workers to find the next station
 minetest.register_craftitem("stock_exchange:geld10E", {
 	description = "Schein 10€",
 	inventory_image = "stock_exchange_10E.png",
@@ -693,7 +689,6 @@ minetest.register_craftitem("stock_exchange:geld10E", {
 	stack_max = 999,
 })
 
--- Tool for tube workers to find the next station
 minetest.register_craftitem("stock_exchange:geld100E", {
 	description = "Schein 100€",
 	inventory_image = "stock_exchange_100E.png",
@@ -701,7 +696,6 @@ minetest.register_craftitem("stock_exchange:geld100E", {
 	stack_max = 999,
 })
 
--- Tool for tube workers to find the next station
 minetest.register_craftitem("stock_exchange:geld1000E", {
 	description = "Schein 1000€",
 	inventory_image = "stock_exchange_1000E.png",

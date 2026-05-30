@@ -10,7 +10,7 @@
 
 ]]--
 
-tSkins = {
+local tSkins = {
 	{"CaligoPL", 'CaligoPL_by_CaligoPL'},
 	{"4 degree", '4-deg'},
 	{"jojoa1997", 'jojoa1997_by_jojoa1997'},
@@ -46,10 +46,10 @@ tSkins = {
   {"stef325", "stef325_by_stef325"},
 }
 
-MAX_SKIN 	 = #tSkins
-MAX_PER_PAGE = 16
-MAX_PER_ROW  = 8
-PRICE        = 100
+local MAX_SKIN 	 = #tSkins
+local MAX_PER_PAGE = 16
+local MAX_PER_ROW  = 8
+local PRICE        = 100
 
 local function buy_formspec(image, desc)
 	return "size[6,6]"..
@@ -101,28 +101,31 @@ local function on_player_receive_fields(player, formname, fields)
 	if formname == "stock_exchange:skin" then			-- select an item ?
 		for i = 1,MAX_SKIN do
 			if fields[tostring(i)] == "" then
-				player:set_attribute("skin_shop_item", "stock_exchange:skin"..i)
+				player:get_meta():set_string("skin_shop_item", "stock_exchange:skin"..i)
 				local image = tSkins[i][2].."_preview.png"
 				local desc = tSkins[i][1]
-				print("buy_formspec(image, desc)", buy_formspec(image, desc))
-				minetest.show_formspec(player_name, "stock_exchange:skin_buy", buy_formspec(image, desc))
+				local s = buy_formspec(image, desc)
+				minetest.after(0.1, minetest.show_formspec, player_name, "stock_exchange:skin_buy", s)
 				break
 			end
 		end
+		return true
 	elseif formname == "stock_exchange:skin_buy" then
 		if fields.buy == "Kaufen" then
 			local number = fields.number or "1"
 			number = tonumber(number) or 1
 			number = math.min(number, 99)
 			local price = PRICE * number
-			local shop_item = player:get_attribute("skin_shop_item")
+			local shop_item = player:get_meta():get_string("skin_shop_item")
 			if stock_exchange.player_has_money(player_name, price) then
 				if stock_exchange.add_to_players_inventory(player_name, shop_item, number) then
 					stock_exchange.update_player_hud(player_name, -price)
 				end
 			end
 		end
+		return true
 	end
+	return false
 end
 
 
@@ -143,17 +146,17 @@ for idx,item in ipairs(tSkins) do
 		
 		on_use = function (itemstack, user)
 			update_player_skin(user, idx)
-			local old_idx = user:get_attribute("stock_exchange:skin_idx") or 1
+			local old_idx = user:get_meta():get_string("stock_exchange:skin_idx") or 1
 			stock_exchange.add_to_players_inventory(user:get_player_name(), "stock_exchange:skin"..old_idx, 1)
-			user:set_attribute("stock_exchange:skin_idx", tostring(idx))
+			user:get_meta():set_string("stock_exchange:skin_idx", tostring(idx))
 			itemstack:take_item()
 			return itemstack
 		end,
 		on_place = function (itemstack, user)
 			update_player_skin(user, idx)
-			local old_idx = user:get_attribute("stock_exchange:skin_idx") or 1
+			local old_idx = user:get_meta():get_string("stock_exchange:skin_idx") or 1
 			stock_exchange.add_to_players_inventory(user:get_player_name(), "stock_exchange:skin"..old_idx, 1)
-			user:set_attribute("stock_exchange:skin_idx", tostring(idx))
+			user:get_meta():set_string("stock_exchange:skin_idx", tostring(idx))
 			itemstack:take_item()
 			return itemstack
 		end,
@@ -200,7 +203,7 @@ end
 
 -- load player skin on join
 minetest.register_on_joinplayer(function(player)
-	local idx = player:get_attribute("stock_exchange:skin_idx")
+	local idx = player:get_meta():get_string("stock_exchange:skin_idx")
 	if idx then
 		update_player_skin(player, tonumber(idx))
 	end
